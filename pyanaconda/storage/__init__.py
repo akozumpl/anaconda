@@ -32,6 +32,7 @@ import parted
 
 from pyanaconda import isys
 from pyanaconda import iutil
+from pyanaconda import view
 from pyanaconda.constants import *
 from pykickstart.constants import *
 from pyanaconda.flags import flags
@@ -356,6 +357,7 @@ class Storage(object):
         self.anaconda = anaconda
         self._intf = intf
         self._platform = platform
+        self.status = view.Status(self.anaconda)
 
         self.config = StorageDiscoveryConfig()
 
@@ -455,9 +457,8 @@ class Storage(object):
             if device.format.type == "luks" and device.format.exists:
                 self.__luksDevs[device.format.uuid] = device.format._LUKS__passphrase
 
-        if self.intf:
-            w = self.intf.waitWindow(_("Examining Devices"),
-                                          _("Examining storage devices"))
+        w = self.status.wait_window(_("Examining Devices"),
+                                    _("Examining storage devices"))
         if not flags.imageInstall:
             self.iscsi.startup(self.intf)
             self.fcoe.startup(self.intf)
@@ -487,8 +488,7 @@ class Storage(object):
         if self.platform:
             self.platform.bootloader.clear_drive_list()
         self.dumpState("initial")
-        if w:
-            w.pop()
+        self.status.destroy_window(w)
 
     @property
     def devices(self):

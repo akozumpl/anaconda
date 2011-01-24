@@ -46,6 +46,7 @@ import network
 from installinterfacebase import InstallInterfaceBase
 import imp
 import iw
+import view
 
 import gettext
 _ = lambda x: gettext.ldgettext("anaconda", x)
@@ -866,11 +867,36 @@ class DetailedMessageWindow(MessageWindow):
         if run:
             self.run(destroyAfterRun)
 
+# TODO: locking access to self.handles
+class GuiView(view.View):
+    def __init__(self, intf):
+        self.intf = intf
+        self.handles = dict()
+
+    def _register_widget(self, handle, widget):
+        assert handle not in self.handles
+        self.handles[handle] = widget
+
+    def intf_work(self, queue):
+        (kind, handle, parameters) = queue.get()
+        if kind == view.WAIT_WINDOW:
+            window = self.intf.waitWindow(**parameters)
+            self._register_widget(handle, window)
+        elif kind == view.DESTROY_WINDOW:
+            self.handles[handle].pop()
+            self.handles.pop(handle)
+        else:
+            raise ValueError("Unknown action in GuiView")
+
+    def update(self, queue):
+        idle_gtk(self.intf_work, queue)
+
 class InstallInterface(InstallInterfaceBase):
     def __init__ (self):
         InstallInterfaceBase.__init__(self)
         self.icw = None
         self.installProgress = None
+        self.view = GuiView(self)
 
         root = gtk.gdk.get_default_root_window()
         cursor = gtk.gdk.Cursor(gtk.gdk.LEFT_PTR)
