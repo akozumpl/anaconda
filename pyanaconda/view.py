@@ -12,7 +12,7 @@ WAIT_WINDOW=101
 DESTROY_WINDOW = 102
 
 class Status(object):
-    class WidgetHandle(object):
+    class StatusHandle(object):
         """ Intentionally empty object used only as a dictionary key in
             the interfaces's View.
         """
@@ -31,18 +31,26 @@ class Status(object):
         self.anaconda.intf.view.update(self.queue)
 
     def wait_window(self, title, text):
-        wh = self.WidgetHandle()
-        self.queue.put((WAIT_WINDOW, wh, self._to_dict(title=title, text=text)))
+        handle = self.StatusHandle()
+        self.queue.put((WAIT_WINDOW,
+                        handle,
+                        self._to_dict(title=title, text=text)))
         self.anaconda.intf.view.update(self.queue)
-        return wh
+        return handle
 
-    # stack interface - TODO
-    def iam_busy(self):
-        self.anaconda.view.update(self.queue)
+    # stack interface
+    def i_am_busy(self, reason, details):
+        handle = self.StatusHandle()
+        self.queue.put((WAIT_WINDOW,
+                        handle,
+                        self._to_dict(title=reason, text=details)))
+        self.status_stack.append(handle)
+        self.anaconda.intf.view.update(self.queue)
 
     def no_longer_busy(self):
-        self.anaconda.view.update(self.queue)
-
+        handle = self.status_stack.pop(len(self.status_stack) - 1)
+        self.queue.put((DESTROY_WINDOW, handle, None))
+        self.anaconda.intf.view.update(self.queue)
 
 class View(object):
     def update(self, queue):

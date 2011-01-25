@@ -457,8 +457,8 @@ class Storage(object):
             if device.format.type == "luks" and device.format.exists:
                 self.__luksDevs[device.format.uuid] = device.format._LUKS__passphrase
 
-        w = self.status.wait_window(_("Examining Devices"),
-                                    _("Examining storage devices"))
+        w = self.status.i_am_busy(_("Examining Devices"),
+                                  _("Examining storage devices"))
         if not flags.imageInstall:
             self.iscsi.startup(self.intf)
             self.fcoe.startup(self.intf)
@@ -488,7 +488,7 @@ class Storage(object):
         if self.platform:
             self.platform.bootloader.clear_drive_list()
         self.dumpState("initial")
-        self.status.destroy_window(w)
+        self.status.no_longer_busy()
 
     @property
     def devices(self):
