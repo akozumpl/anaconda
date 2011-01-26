@@ -220,9 +220,11 @@ def scrollToIdleHandler((view, store, iddict)):
 
 # setup globals
 def processEvents():
-    gtk.gdk.flush()
-    while gtk.events_pending():
-        gtk.main_iteration(False)
+    # gtk.gdk.flush()
+    # while gtk.events_pending():
+    #     gtk.main_iteration(False)
+    pass # calling main_iteration from within an idle call causes the idle call
+         # to terminate, not desirable.
 
 def widgetExpander(widget, growTo=None):
     widget.connect("size-allocate", growToParent, growTo)
