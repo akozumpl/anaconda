@@ -385,7 +385,7 @@ class WaitWindow:
         # mainloop. With metacity this bites us and we have to do
         # window.show_now() AND refresh() to correctly display the window and
         # its contents:
-        self.window.show_now()
+        self.window.show_all()
         rootPushBusyCursor()
         self.refresh()
 
@@ -427,7 +427,7 @@ class ProgressWindow:
         self.window.add(box)
         addFrame(self.window)
         # see comment at WaitWindow.__init__():
-        self.window.show_now ()
+        self.window.show_all()
         rootPushBusyCursor()
         self.refresh()
 
@@ -879,19 +879,33 @@ class GuiView(view.View):
         assert handle not in self.handles
         self.handles[handle] = widget
 
-    def intf_work(self, queue):
-        (kind, handle, parameters) = queue.get()
-        if kind == view.WAIT_WINDOW:
-            window = self.intf.waitWindow(**parameters)
-            self._register_widget(handle, window)
-        elif kind == view.DESTROY_WINDOW:
+    @gui_thread
+    def intf_work(self, in_queue, out_queue):
+        # this is typically called from gtk's main loop as the idle action. that
+        # means: whatever is called in this function should never directly call
+        # next loop iteration, namely:
+        # * call gtk.main_iteration(False)
+        # * call a widget's show_now() method (which should never be used
+        #   anyway)
+
+        (kind, handle, parameters) = in_queue.get()
+        if kind == view.DESTROY_WINDOW:
+            log.debug("GuiView: DESTROY_WINDOW")
             self.handles[handle].pop()
             self.handles.pop(handle)
+        elif kind == view.PASSPHRASE_WINDOW:
+            log.debug("GuiView: PASSPHRASE_WINDOW")
+            out_queue.put(self.intf.passphraseEntryWindow(**parameters))
+        elif kind == view.WAIT_WINDOW:
+            log.debug("GuiView: WAIT_WINDOW")
+            window = self.intf.waitWindow(**parameters)
+            self._register_widget(handle, window)
         else:
             raise ValueError("Unknown action in GuiView")
 
-    def update(self, queue):
-        idle_gtk(self.intf_work, queue)
+    def update(self, in_queue, out_queue):
+        # note: this will do nothing until the gtk main function is running.
+        idle_gtk(self.intf_work, in_queue, out_queue)
 
 class InstallInterface(InstallInterfaceBase):
     def __init__ (self):
@@ -1460,6 +1474,7 @@ class InstallControlWindow:
         # start the dispatcher right after the main loop is started:
         idle_gtk(self.anaconda.dispatch.dispatch)
         self._main_loop_running = True
+        log.info("entering gtk.main()")
         gtk.main()
 
 class InstallControlState:
