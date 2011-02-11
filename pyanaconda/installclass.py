@@ -88,6 +88,7 @@ class BaseInstallClass(object):
 		 "keyboard",
                  "filtertype",
                  "filter",
+                 "akcustomstep",
                  "storageinit",
                  "findrootparts",
 		 "betanag",

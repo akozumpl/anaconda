@@ -48,6 +48,8 @@ from backend import writeConfiguration
 
 from packages import doReIPL
 
+from akcustom import akcustomstep
+
 import logging
 log = logging.getLogger("anaconda")
 
@@ -68,6 +70,7 @@ log = logging.getLogger("anaconda")
 installSteps = [
     ("language", ),
     ("keyboard", ),
+    ("akcustomstep", akcustomstep ),
     ("betanag", betaNagScreen, ),
     ("filtertype", ),
     ("filter", ),
