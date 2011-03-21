@@ -101,6 +101,16 @@ def idle_gtk(func, *args, **kwargs):
         return False
     gobject.idle_add(return_false, func, *args, **kwargs)
 
+def gui_thread(func):
+    """ Decorator. On graphical install, assert that this is the thread where
+        GTK is running.
+    """
+    def wrapper(*args, **kwargs):
+        assert threading.currentThread().ident == gui_thread_id,\
+            "the function %s must be called from the GUI thread" % func.__name__
+        return func(*args, **kwargs)
+    return wrapper
+
 #
 # Stuff for screenshots
 #
@@ -1059,12 +1069,14 @@ class InstallInterface(InstallInterfaceBase):
     def setPackageProgressWindow (self, ppw):
         self.ppw = ppw
 
+    @gui_thread
     def waitWindow (self, title, text):
         if self.icw:
             return WaitWindow (title, text, self.icw.window)
         else:
             return WaitWindow (title, text)
 
+    @gui_thread
     def progressWindow (self, title, text, total, updpct = 0.05, pulse = False):
         if self.icw:
             return ProgressWindow (title, text, total, updpct,
@@ -1072,6 +1084,7 @@ class InstallInterface(InstallInterfaceBase):
         else:
             return ProgressWindow (title, text, total, updpct, pulse = pulse)
 
+    @gui_thread
     def messageWindow(self, title, text, type="ok", default = None,
              custom_buttons=None,  custom_icon=None):
         if self.icw:
@@ -1083,6 +1096,7 @@ class InstallInterface(InstallInterfaceBase):
                 custom_buttons, custom_icon, run=True, parent=parent).getrc()
         return rc
 
+    @gui_thread
     def reinitializeWindow(self, title, path, size, description):
         if self.icw:
             parent = self.icw.window
@@ -1092,12 +1106,14 @@ class InstallInterface(InstallInterfaceBase):
         rc = ReinitializeWindow(title, path, size, description, parent=parent).getrc()
         return rc
 
+    @gui_thread
     def editRepoWindow(self, repoObj):
         from iw.task_gui import RepoEditor
         dialog = RepoEditor(self.anaconda, repoObj)
         dialog.createDialog()
         dialog.run()
 
+    @gui_thread
     def methodstrRepoWindow(self, methodstr, exception):
         from iw.task_gui import RepoMethodstrEditor
 
@@ -1112,6 +1128,7 @@ class InstallInterface(InstallInterfaceBase):
         dialog.createDialog()
         return dialog.run()
 
+    @gui_thread
     def detailedMessageWindow(self, title, text, longText=None, type="ok",
                               default=None, custom_buttons=None,
                               custom_icon=None, expanded=False):
@@ -1163,6 +1180,7 @@ class InstallInterface(InstallInterfaceBase):
                             custom_buttons=[_("_Exit installer")]).getrc()
         return rc
 
+    @gui_thread
     def getLuksPassphrase(self, passphrase = "", preexist = False):
         if self.icw:
             parent = self.icw.window
@@ -1177,6 +1195,7 @@ class InstallInterface(InstallInterfaceBase):
         d.destroy()
         return (passphrase, isglobal)
 
+    @gui_thread
     def passphraseEntryWindow(self, device):
         if self.icw:
             parent = self.icw.window
@@ -1191,6 +1210,7 @@ class InstallInterface(InstallInterfaceBase):
     def beep(self):
         gtk.gdk.beep()
 
+    @gui_thread
     def kickstartErrorWindow(self, text):
         s = _("The following error was found while parsing the "
               "kickstart configuration file:\n\n%s") %(text,)
