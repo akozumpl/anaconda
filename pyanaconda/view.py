@@ -10,8 +10,9 @@ log = logging.getLogger("anaconda")
 # getLuksPassphrase
 # detailedMessageWindow
 
-PASSPHRASE_WINDOW = 101
-WAIT_WINDOW     = 102
+MESSAGE_WINDOW = 101
+PASSPHRASE_WINDOW = 102
+WAIT_WINDOW     = 103
 
 DISPLAY_STEP = 150
 
@@ -65,6 +66,15 @@ class Status(object):
                         self._to_dict(title=reason, text=details)))
         self.status_stack.append(handle)
         self._update_ui()
+
+    def need_answer_sync(self, title, text, type="ok", default=None,
+                       custom_buttons=None, custom_icon=None):
+        argdict = self._to_dict(title=title, text=text, type=type,
+                                default=default, custom_buttons=custom_buttons,
+                                custom_icon=custom_icon)
+        self.out_queue.put((MESSAGE_WINDOW, None, argdict))
+        self._update_ui()
+        return self.in_queue.get()
 
     def need_passphrase_sync(self, device_name):
         # synchronous event

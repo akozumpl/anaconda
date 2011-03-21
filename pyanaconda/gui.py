@@ -925,6 +925,9 @@ class GuiView(view.View):
             log.debug("GuiView: DESTROY_WINDOW")
             self.handles[handle].pop()
             self.handles.pop(handle)
+        elif kind == view.MESSAGE_WINDOW:
+            log.debug("GuiView: DESTROY_WINDOW")
+            out_queue.put(self.intf.messageWindow(**parameters))
         elif kind == view.PASSPHRASE_WINDOW:
             log.debug("GuiView: PASSPHRASE_WINDOW")
             out_queue.put(self.intf.passphraseEntryWindow(**parameters))
