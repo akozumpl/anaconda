@@ -128,8 +128,8 @@ class Dispatcher(object):
         return False
 
     def run(self):
-        self.anaconda.intf.run(self.anaconda)
-        log.info("dispatch: finished.")
+        self.anaconda.intf.start(self.anaconda)
+        self.dispatch()
 
     def setStepList(self, *steps):
         # only remove non-permanently skipped steps from our skip list
@@ -194,7 +194,7 @@ class Dispatcher(object):
             if self.step >= total_steps:
                 # installation has proceeded beyond the last step: finished
                 self.anaconda.intf.shutdown()
-                return
+                break
             if self.step < 0:
                 raise RuntimeError("dispatch: out  of bounds "
                                    "(dir: %d, step: %d)" % (self.dir, self.step))
@@ -217,12 +217,7 @@ class Dispatcher(object):
                 log.info("dispatch: moving (%d) to step %s" %
                          (self.dir, step_name))
                 rc = self.anaconda.intf.display_step(step_name)
-                if rc == DISPATCH_WAITING:
-                    # a new screen has been set up and we are waiting for the
-                    # user input now (this only ever happens with the GTK UI and
-                    # is because we need to get back to gtk.main())
-                    return
-                elif rc == DISPATCH_DEFAULT:
+                if rc == DISPATCH_DEFAULT:
                     log.debug("dispatch: the interface chose "
                                 "not to display step %s." % step_name)
                 else:
@@ -230,6 +225,8 @@ class Dispatcher(object):
             log.info("dispatch: leaving (%d) step %s" %
                      (self.dir, step_name))
             self.step += self.dir
+
+        log.info("dispatch: finished.")
 
     def __init__(self, anaconda):
         self.anaconda = anaconda

@@ -13,6 +13,8 @@ log = logging.getLogger("anaconda")
 PASSPHRASE_WINDOW = 101
 WAIT_WINDOW     = 102
 
+DISPLAY_STEP = 150
+
 DESTROY_WINDOW  = 201
 
 class Status(object):
@@ -48,6 +50,14 @@ class Status(object):
         return handle
 
     # stack interface
+    def display_step(self, step):
+        # synchronous event
+        self.out_queue.put((DISPLAY_STEP,
+                            None,
+                            self._to_dict(step=step)))
+        self._update_ui()
+        return self.in_queue.get()
+
     def i_am_busy(self, reason, details):
         handle = self.StatusHandle()
         self.out_queue.put((WAIT_WINDOW,

@@ -916,7 +916,12 @@ class GuiView(view.View):
         #   anyway)
 
         (kind, handle, parameters) = in_queue.get()
-        if kind == view.DESTROY_WINDOW:
+        if kind == view.DISPLAY_STEP:
+            log.debug("GuiView: DISPLAY_STEP")
+            # tell the icw where we expect the return value
+            self.intf.icw.rc_queue = out_queue
+            self.intf.icw.display_step(**parameters)
+        elif kind == view.DESTROY_WINDOW:
             log.debug("GuiView: DESTROY_WINDOW")
             self.handles[handle].pop()
             self.handles.pop(handle)
@@ -939,7 +944,9 @@ class InstallInterface(InstallInterfaceBase):
         InstallInterfaceBase.__init__(self)
         self.icw = None
         self.installProgress = None
+        self.gui_thread = None
         self.view = GuiView(self)
+        self.status = None
 
         root = gtk.gdk.get_default_root_window()
         cursor = gtk.gdk.Cursor(gtk.gdk.LEFT_PTR)
@@ -951,6 +958,7 @@ class InstallInterface(InstallInterfaceBase):
     def shutdown(self):
         if self.icw:
             self.icw.close()
+        self.gui_thread.join()
 
     def suspend(self):
         pass
@@ -1234,19 +1242,21 @@ class InstallInterface(InstallInterfaceBase):
                                   custom_icon = "error")
 
     def display_step(self, step):
-        return self.icw.display_step(step)
+        return self.status.display_step(step)
 
     def getBootdisk (self):
         return None
 
-    def run(self, anaconda):
+    def start(self, anaconda):
         self.anaconda = anaconda
+        self.status = view.Status(anaconda)
 
         if anaconda.keyboard and not flags.livecdInstall:
             anaconda.keyboard.activate()
 
         self.icw = InstallControlWindow(self.anaconda)
-        self.icw.run()
+        self.gui_thread = threading.Thread(target=self.icw.run)
+        self.gui_thread.start()
 
     def setSteps(self, anaconda):
         pass
@@ -1276,21 +1286,21 @@ class InstallControlWindow:
             log.error("someone didn't translate the ltr bits right: %s" %(ltrrtl,))
             gtk.widget_set_default_direction (gtk.TEXT_DIR_LTR)
 
-    def prevClicked (self, *args):
+    def prevClicked(self, *args):
         try:
-            self.currentWindow.getPrev ()
+            self.currentWindow.getPrev()
         except StayOnScreen:
             return
 
-        self.anaconda.dispatch.go_back()
+        self.rc_queue.put(DISPATCH_BACK)
 
     def nextClicked (self, *args):
         try:
-            rc = self.currentWindow.getNext ()
+            rc = self.currentWindow.getNext()
         except StayOnScreen:
             return
 
-        self.anaconda.dispatch.go_forward()
+        self.rc_queue.put(DISPATCH_FORWARD)
 
     def debugClicked (self, *args):
         try:
@@ -1366,7 +1376,8 @@ class InstallControlWindow:
         # step.  However, we do not want to remove the current step from the
         # list as later events may cause the screen to be displayed.
         if not new_screen:
-            return DISPATCH_DEFAULT
+            self.rc_queue.put(DISPATCH_DEFAULT)
+            return
 
         self.update (ics)
         self.installFrame.add(new_screen)
@@ -1376,9 +1387,6 @@ class InstallControlWindow:
         if self.reloadRcQueued:
             self.window.reset_rc_styles()
             self.reloadRcQueued = 0
-
-        # the screen is displayed, we wait for the user now
-        return DISPATCH_WAITING
 
     def destroyCurrentWindow(self):
         children = self.installFrame.get_children ()
@@ -1404,6 +1412,7 @@ class InstallControlWindow:
         self.anaconda = anaconda
         self.handle = None
         self.window = None
+        self.rc_queue = None
 
     def keyRelease (self, window, event):
         if ((event.keyval == gtk.keysyms.KP_Delete
@@ -1518,12 +1527,13 @@ class InstallControlWindow:
     def run (self):
         global gui_thread_id
         gui_thread_id = threading.currentThread().ident
+        log.debug("thread id where dispatch is running is: %d" % main_thread_id)
+        log.debug("thread id where gtk.main() is running: %d" % gui_thread_id)
         assert gui_thread_id
         assert gui_thread_id != main_thread_id
 
         self.setup_window(False)
         # start the dispatcher right after the main loop is started:
-        idle_gtk(self.anaconda.dispatch.dispatch)
         self._main_loop_running = True
 
         gtk.gdk.threads_init()
