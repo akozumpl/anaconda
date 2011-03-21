@@ -42,6 +42,7 @@ import gobject
 from language import expandLangs
 from constants import *
 from product import *
+import threading
 import network
 from installinterfacebase import InstallInterfaceBase
 import imp
@@ -88,6 +89,9 @@ stepToClass = {
 
 if iutil.isS390():
     stepToClass["bootloader"] = ("zipl_gui", "ZiplWindow")
+
+main_thread_id = threading.currentThread().ident
+gui_thread_id = None
 
 def idle_gtk(func, *args, **kwargs):
     def return_false(func, *args, **kwargs):
@@ -1470,6 +1474,11 @@ class InstallControlWindow:
         self.window.present()
 
     def run (self):
+        global gui_thread_id
+        gui_thread_id = threading.currentThread().ident
+        assert gui_thread_id
+        assert gui_thread_id != main_thread_id
+
         self.setup_window(False)
         # start the dispatcher right after the main loop is started:
         idle_gtk(self.anaconda.dispatch.dispatch)
