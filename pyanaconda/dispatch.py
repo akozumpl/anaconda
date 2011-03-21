@@ -117,18 +117,6 @@ installSteps = [
 
 class Dispatcher(object):
 
-    def go_back(self):
-        """
-        The caller should make sure canGoBack() is True before calling this
-        method.
-        """
-        self._setDir(DISPATCH_BACK)
-        self.dispatch()
-
-    def go_forward(self):
-        self._setDir(DISPATCH_FORWARD)
-        self.dispatch()
-
     def canGoBack(self):
         # begin with the step before this one.  If all steps are skipped,
         # we can not go backwards from this screen
