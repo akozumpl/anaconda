@@ -375,6 +375,19 @@ def readImageFromFile(file, dither = False, image = None):
 
     return p
 
+class ProcessingThread(threading.Thread):
+    def __init__(self, main_func, gui_func):
+        threading.Thread.__init__(self)
+        self.main_callable = main_func
+        self.gui_callable = gui_func
+    def run(self):
+        try:
+            self.main_callable()
+        except Exception as e:
+            log.critical("the thread %x has died: %s" %
+                         (threading.current_thread().ident, e))
+        idle_gtk(self.gui_callable)
+
 class WaitWindow:
     def __init__(self, title, text, parent = None):
         if flags.livecdInstall:
@@ -1239,6 +1252,15 @@ class InstallInterface(InstallInterfaceBase):
         pass
 
 class InstallControlWindow:
+    def advance_dispatch_async(self, direction):
+        disp_func = self.anaconda.dispatch.gotoPrev
+        if self.anaconda.dispatch.dir == DISPATCH_FORWARD:
+            disp_func = self.anaconda.dispatch.gotoNext
+
+        proc_thread = ProcessingThread(disp_func,
+                                       self.setScreen)
+        proc_thread.start()
+
     def setLanguage (self):
         if not self.__dict__.has_key('window'): return
         self.reloadRcQueued = 1
