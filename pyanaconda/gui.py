@@ -1525,8 +1525,13 @@ class InstallControlWindow:
         # start the dispatcher right after the main loop is started:
         idle_gtk(self.anaconda.dispatch.dispatch)
         self._main_loop_running = True
-        log.info("entering gtk.main()")
+
+        gtk.gdk.threads_init()
+        gtk.gdk.threads_enter()
+        log.info("gui: entering gtk.main().")
         gtk.main()
+        log.info("gui: left gtk.main().")
+        gtk.gdk.threads_leave()
 
 class InstallControlState:
     def __init__ (self, cw):
