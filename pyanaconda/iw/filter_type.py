@@ -71,6 +71,7 @@ class FilterTypeWindow(InstallWindow):
                                           "the installer should ignore."))
 
         widget = self.buttonGroup.render()
+        self.buttonGroup.topLevelButtonList[0][0].connect('clicked', self.clicked)
         vbox.pack_start(widget, expand=True, fill=True)
 
         if self.anaconda.simpleFilter == True:
@@ -79,3 +80,8 @@ class FilterTypeWindow(InstallWindow):
             self.buttonGroup.setCurrent("complex")
 
         return vbox
+
+    def clicked(self, widget):
+        import logging
+        log = logging.getLogger("anaconda")
+        log.critical("clicked")
