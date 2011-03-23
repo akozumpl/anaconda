@@ -939,8 +939,14 @@ class GuiView(view.View):
             raise ValueError("Unknown action in GuiView")
 
     def update(self, in_queue, out_queue):
-        # note: this will do nothing until the gtk main function is running.
-        idle_gtk(self.intf_work, in_queue, out_queue)
+        if threading.current_thread().ident == gui_thread_id:
+            # If we are in the GUI thread already, just perform the action
+            # directly: adding to the idle queue could cause a deadlock because
+            # the method that called us could be blocking on the out_queue.
+            self.intf_work(in_queue, out_queue)
+        else:
+            # Note: this will do nothing until the gtk main function has started.
+            idle_gtk(self.intf_work, in_queue, out_queue)
 
 class InstallInterface(InstallInterfaceBase):
     def __init__ (self):
