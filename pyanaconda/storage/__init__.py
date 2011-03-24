@@ -30,9 +30,9 @@ import statvfs
 import nss.nss
 import parted
 
+import pyanaconda.view
 from pyanaconda import isys
 from pyanaconda import iutil
-from pyanaconda import view
 from pyanaconda.constants import *
 from pykickstart.constants import *
 from pyanaconda.flags import flags
@@ -253,7 +253,7 @@ def writeEscrowPackets(anaconda):
 
     log.debug("escrow: writeEscrowPackets start")
 
-    status = view.Status()
+    status = pyanaconda.view.Status()
     status.i_am_busy(_("Running..."),
                       _("Storing encryption keys"))
 
@@ -456,7 +456,7 @@ class Storage(object):
             if device.format.type == "luks" and device.format.exists:
                 self.__luksDevs[device.format.uuid] = device.format._LUKS__passphrase
 
-        status = view.Status()
+        status = pyanaconda.view.Status()
         status.i_am_busy(_("Examining Devices"),
                          _("Examining storage devices"))
         if not flags.imageInstall:

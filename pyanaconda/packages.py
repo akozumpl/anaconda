@@ -35,7 +35,7 @@ import language
 import shutil
 import traceback
 
-import view
+import pyanaconda.view
 from flags import flags
 from product import *
 from constants import *
@@ -318,7 +318,7 @@ def betaNagScreen(anaconda):
         fileagainst = "%s Beta" %(productName,)
     
     while 1:
-        status = view.Status()
+        status = pyanaconda.view.Status()
         rc = status.need_answer_sync(
             _("Warning"),
             _("Warning!  This is pre-release software!\n\n"

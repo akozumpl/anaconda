@@ -47,7 +47,7 @@ import network
 from installinterfacebase import InstallInterfaceBase
 import imp
 import iw
-import view
+import pyanaconda.view
 
 import gettext
 _ = lambda x: gettext.ldgettext("anaconda", x)
@@ -897,7 +897,7 @@ class DetailedMessageWindow(MessageWindow):
             self.run(destroyAfterRun)
 
 # TODO: locking access to self.handles
-class GuiView(view.View):
+class GuiView(pyanaconda.view.View):
     def __init__(self, intf):
         self.intf = intf
         self.handles = dict()
@@ -916,22 +916,22 @@ class GuiView(view.View):
         #   anyway)
 
         (kind, handle, parameters) = in_queue.get()
-        if kind == view.DISPLAY_STEP:
+        if kind == pyanaconda.view.DISPLAY_STEP:
             log.debug("GuiView: DISPLAY_STEP")
             # tell the icw where we expect the return value
             self.intf.icw.rc_queue = out_queue
             self.intf.icw.display_step(**parameters)
-        elif kind == view.DESTROY_WINDOW:
+        elif kind == pyanaconda.view.DESTROY_WINDOW:
             log.debug("GuiView: DESTROY_WINDOW")
             self.handles[handle].pop()
             self.handles.pop(handle)
-        elif kind == view.MESSAGE_WINDOW:
+        elif kind == pyanaconda.view.MESSAGE_WINDOW:
             log.debug("GuiView: DESTROY_WINDOW")
             out_queue.put(self.intf.messageWindow(**parameters))
-        elif kind == view.PASSPHRASE_WINDOW:
+        elif kind == pyanaconda.view.PASSPHRASE_WINDOW:
             log.debug("GuiView: PASSPHRASE_WINDOW")
             out_queue.put(self.intf.passphraseEntryWindow(**parameters))
-        elif kind == view.WAIT_WINDOW:
+        elif kind == pyanaconda.view.WAIT_WINDOW:
             log.debug("GuiView: WAIT_WINDOW")
             window = self.intf.waitWindow(**parameters)
             self._register_widget(handle, window)
@@ -1258,7 +1258,7 @@ class InstallInterface(InstallInterfaceBase):
 
     def start(self, anaconda):
         self.anaconda = anaconda
-        self.status = view.Status()
+        self.status = pyanaconda.view.Status()
 
         if anaconda.keyboard and not flags.livecdInstall:
             anaconda.keyboard.activate()
