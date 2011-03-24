@@ -1258,7 +1258,7 @@ class InstallInterface(InstallInterfaceBase):
 
     def start(self, anaconda):
         self.anaconda = anaconda
-        self.status = view.Status(anaconda)
+        self.status = view.Status()
 
         if anaconda.keyboard and not flags.livecdInstall:
             anaconda.keyboard.activate()

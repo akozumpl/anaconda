@@ -318,7 +318,7 @@ def betaNagScreen(anaconda):
         fileagainst = "%s Beta" %(productName,)
     
     while 1:
-        status = view.Status(anaconda)
+        status = view.Status()
         rc = status.need_answer_sync(
             _("Warning"),
             _("Warning!  This is pre-release software!\n\n"

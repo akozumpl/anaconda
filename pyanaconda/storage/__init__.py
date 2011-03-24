@@ -253,8 +253,9 @@ def writeEscrowPackets(anaconda):
 
     log.debug("escrow: writeEscrowPackets start")
 
-    wait_win = anaconda.intf.waitWindow(_("Running..."),
-                                        _("Storing encryption keys"))
+    status = view.Status()
+    status.i_am_busy(_("Running..."),
+                      _("Storing encryption keys"))
 
     nss.nss.nss_init_nodb() # Does nothing if NSS is already initialized
 
@@ -266,9 +267,9 @@ def writeEscrowPackets(anaconda):
             device.format.escrow(anaconda.rootPath + "/root",
                                  backupPassphrase)
 
-        wait_win.pop()
+        status.no_longer_busy()
     except (IOError, RuntimeError) as e:
-        wait_win.pop()
+        status.no_longer_busy()
         anaconda.intf.messageWindow(_("Error"),
                                     _("Error storing an encryption key: "
                                       "%s\n") % str(e), type="custom",
@@ -277,7 +278,6 @@ def writeEscrowPackets(anaconda):
         sys.exit(1)
 
     log.debug("escrow: writeEscrowPackets done")
-
 
 def undoEncryption(storage):
     for device in storage.devicetree.getDevicesByType("luks/dm-crypt"):
@@ -357,7 +357,6 @@ class Storage(object):
         self.anaconda = anaconda
         self._intf = intf
         self._platform = platform
-        self.status = view.Status(self.anaconda)
 
         self.config = StorageDiscoveryConfig()
 
@@ -457,8 +456,9 @@ class Storage(object):
             if device.format.type == "luks" and device.format.exists:
                 self.__luksDevs[device.format.uuid] = device.format._LUKS__passphrase
 
-        w = self.status.i_am_busy(_("Examining Devices"),
-                                  _("Examining storage devices"))
+        status = view.Status()
+        status.i_am_busy(_("Examining Devices"),
+                         _("Examining storage devices"))
         if not flags.imageInstall:
             self.iscsi.startup(self.intf)
             self.fcoe.startup(self.intf)
@@ -488,7 +488,7 @@ class Storage(object):
         if self.platform:
             self.platform.bootloader.clear_drive_list()
         self.dumpState("initial")
-        self.status.no_longer_busy()
+        status.no_longer_busy()
 
     @property
     def devices(self):

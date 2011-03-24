@@ -18,6 +18,13 @@ DISPLAY_STEP = 150
 
 DESTROY_WINDOW  = 201
 
+# The global view reference.
+_view = None
+
+def bind_view(view):
+    global _view
+    _view = view
+
 class Status(object):
     class StatusHandle(object):
         """ Intentionally empty object used only as a dictionary key in
@@ -25,10 +32,10 @@ class Status(object):
         """
         pass
 
-    def __init__(self, anaconda):
+    def __init__(self):
+        """ Creates the StatusHandle object. """
         self.out_queue = Queue.Queue() # outbound queue
         self.in_queue = Queue.Queue() # inbound queue
-        self.anaconda = anaconda
         self.status_stack = []
 
     def _to_dict(self, **kw_dict):
@@ -36,8 +43,12 @@ class Status(object):
 
     def _update_ui(self):
         # view's in_queue is our out_queue
-        self.anaconda.intf.view.update(self.out_queue, self.in_queue)
+        if _view:
+            _view.update(self.out_queue, self.in_queue)
+        else:
+            log.debugger("No view object to handle a UI update.")
 
+    # asynchronous interface
     def destroy_window(self, wh):
         self.out_queue.put((DESTROY_WINDOW, wh, None))
         self._update_ui()

@@ -92,6 +92,10 @@ class Anaconda(object):
         # *sigh* we still need to be able to write this out
         self.xdriver = None
 
+    def _bind_intf_to_view(self):
+        import view
+        view.bind_view(self._intf.view)
+
     @property
     def backend(self):
         if not self._backend:
@@ -249,6 +253,7 @@ class Anaconda(object):
             from cmdline import InstallInterface
 
         self._intf = InstallInterface()
+        self._bind_intf_to_view()
         return self._intf
 
     def writeXdriver(self, root = None):
