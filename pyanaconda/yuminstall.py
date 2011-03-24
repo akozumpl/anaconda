@@ -53,6 +53,7 @@ from constants import *
 from image import *
 from compssort import *
 import packages
+import pyanaconda.view
 
 import gettext
 _ = lambda x: gettext.ldgettext("anaconda", x)
@@ -957,9 +958,10 @@ class AnacondaYum(yum.YumBase):
 
         delay = 0.25*(2**(obj.tries-1))
         if delay > 1:
-            w = self.anaconda.intf.waitWindow(_("Retrying"), _("Retrying download."))
+            status = pyanaconda.view.Status()
+            status.i_am_busy(_("Retrying"), _("Retrying download."))
             time.sleep(delay)
-            w.pop()
+            status.no_longer_busy()
         else:
             time.sleep(delay)
 
@@ -1625,11 +1627,12 @@ reposdir=/etc/anaconda.repos.d,/tmp/updates/anaconda.repos.d,/tmp/product/anacon
             return DISPATCH_BACK
 
     def doPostInstall(self, anaconda):
+        status = pyanaconda.view.Status()
         if anaconda.upgrade:
-            w = anaconda.intf.waitWindow(_("Post Upgrade"),
+            status.i_am_busy(_("Post Upgrade"),
                                     _("Performing post-upgrade configuration"))
         else:
-            w = anaconda.intf.waitWindow(_("Post Installation"),
+            status.i_am_busy(_("Post Installation"),
                                     _("Performing post-installation configuration"))
 
         packages.rpmSetupGraphicalSystem(anaconda)
@@ -1657,7 +1660,7 @@ reposdir=/etc/anaconda.repos.d,/tmp/updates/anaconda.repos.d,/tmp/product/anacon
         # XXX: write proper lvm config
 
         AnacondaBackend.doPostInstall(self, anaconda)
-        w.pop()
+        status.no_longer_busy()
 
     def kernelVersionList(self, rootPath="/"):
         # FIXME: using rpm here is a little lame, but otherwise, we'd
@@ -1967,10 +1970,11 @@ class SackSetupProgress:
             txt = _("Retrieving installation information.")
         else:
             txt = _("Retrieving installation information for %s.")%(repo.name)
-        self.window = self.intf.waitWindow(_("Installation Progress"), txt)
+        status = pyanaconda.view.Status()
+        status.i_am_busy(_("Installation Progress"), txt)
 
     def disconnect(self):
-        self.window.pop()
+        status.no_longer_busy()
 
 class RepoSetupPulseProgress:
     def __init__(self, intf):

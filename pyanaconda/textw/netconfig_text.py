@@ -22,6 +22,7 @@
 #
 
 
+import pyanaconda.view
 from pyanaconda import isys
 from pyanaconda import network
 from snack import *
@@ -396,9 +397,10 @@ class NetworkConfiguratorText:
 
         dev.set(('ONBOOT', 'yes'))
 
-        w = self.anaconda.intf.waitWindow(_("Configuring Network Interfaces"), _("Waiting for NetworkManager"))
+        status = pyanaconda.view.Status()
+        status.i_am_busy(_("Configuring Network Interfaces"), _("Waiting for NetworkManager"))
         result = self.anaconda.network.bringUp()
-        w.pop()
+        status.no_longer_busy()
         if not result:
             self.anaconda.intf.messageWindow(_("Network Error"),
                                              _("There was an error configuring "

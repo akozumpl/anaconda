@@ -25,6 +25,7 @@ import os
 import re
 import struct
 
+import pyanaconda.view
 from pyanaconda import iutil
 from pyanaconda.storage.devicelibs import mdraid
 from pyanaconda.isys import sync
@@ -1609,10 +1610,9 @@ def writeBootloader(anaconda):
     stage2_device = anaconda.bootloader.stage2_device
     log.info("bootloader stage2 target device is %s" % stage2_device.name)
 
-    w = None
-    if anaconda.intf:
-        w = anaconda.intf.waitWindow(_("Bootloader"),
-                                     _("Installing bootloader."))
+    status = pyanaconda.view.Status()
+    status.i_am_busy(_("Bootloader"),
+                     _("Installing bootloader."))
 
     # get a list of installed kernel packages
     kernel_versions = anaconda.backend.kernelVersionList(anaconda.rootPath)
@@ -1630,8 +1630,7 @@ def writeBootloader(anaconda):
     default_image = anaconda.bootloader.default
     if not default_image:
         log.error("unable to find default image, bailing")
-        if w:
-            w.pop()
+        status.no_longer_busy()
         return
 
     default_image.version = version
@@ -1676,6 +1675,4 @@ def writeBootloader(anaconda):
                             _("There was an error installing the bootloader.  "
                               "The system may not be bootable."))
     finally:
-        if w:
-            w.pop()
-
+        status.no_longer_busy()

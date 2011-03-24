@@ -18,6 +18,7 @@
 #
 
 import os
+import pyanaconda.view
 from pyanaconda import iutil
 from pyanaconda import isys
 import logging
@@ -62,16 +63,15 @@ class fcoe(object):
         return self
 
     def _stabilize(self, intf = None):
-        if intf:
-            w = intf.waitWindow(_("Connecting to FCoE SAN"),
-                                _("Connecting to FCoE SAN"))
+        status = pyanaconda.view.Status()
+        status.i_am_busy(_("Connecting to FCoE SAN"),
+                         _("Connecting to FCoE SAN"))
 
         # I have no clue how long we need to wait, this ought to do the trick
         time.sleep(10)
         iutil.execWithRedirect("udevadm", [ "settle" ],
                                stdout = "/dev/tty5", stderr="/dev/tty5")
-        if intf:
-            w.pop()
+        status.no_longer_busy()
 
     def _startEDD(self, intf = None):
         rc = iutil.execWithCapture("/usr/libexec/fcoe/fcoe_edd.sh", [ "-i" ],

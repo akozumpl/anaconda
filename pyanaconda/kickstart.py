@@ -18,6 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import pyanaconda.view
 from storage.deviceaction import *
 from storage.devices import LUKSDevice
 from storage.devicelibs.lvm import getPossiblePhysicalExtents
@@ -1349,14 +1350,15 @@ def runPostScripts(anaconda):
 
     log.info("Running kickstart %%post script(s)")
     if anaconda.intf is not None:
-        w = anaconda.intf.waitWindow(_("Post-Installation"),
-                            _("Running post-installation scripts"))
+        status = pyanaconda.view.Status()
+        status.i_am_busy(_("Post-Installation"),
+                         _("Running post-installation scripts"))
         
     map (lambda s: s.run(anaconda.rootPath, flags.serial, anaconda.intf), postScripts)
 
     log.info("All kickstart %%post script(s) have been run")
     if anaconda.intf is not None:
-        w.pop()
+        status.no_longer_busy()
 
 def runPreScripts(anaconda, scripts):
     preScripts = filter (lambda s: s.type == KS_SCRIPT_PRE, scripts)

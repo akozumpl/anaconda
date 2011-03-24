@@ -18,6 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import pyanaconda.view
 from pyanaconda.constants import *
 from udev import *
 import os
@@ -149,15 +150,14 @@ class iscsi(object):
 
     def stabilize(self, intf = None):
         # Wait for udev to create the devices for the just added disks
-        if intf:
-            w = intf.waitWindow(_("Scanning iSCSI nodes"),
-                                _("Scanning iSCSI nodes"))
+        status = pyanaconda.view.Status()
+        status.i_am_busy(_("Scanning iSCSI nodes"),
+                         _("Scanning iSCSI nodes"))
         # It is possible when we get here the events for the new devices
         # are not send yet, so sleep to make sure the events are fired
         time.sleep(2)
         udev_settle()
-        if intf:
-            w.pop()
+        status.no_longer_busy()
 
     def startup(self, intf = None):
         if self.started:
@@ -170,9 +170,9 @@ class iscsi(object):
             log.info("no initiator set")
             return
 
-        if intf:
-            w = intf.waitWindow(_("Initializing iSCSI initiator"),
-                                _("Initializing iSCSI initiator"))
+        status = pyanaconda.view.Status()
+        status.i_am_busy(_("Initializing iSCSI initiator"),
+                         _("Initializing iSCSI initiator"))
 
         log.debug("Setting up %s" % (INITIATOR_FILE, ))
         log.info("iSCSI initiator name %s", self.initiator)
@@ -209,8 +209,7 @@ class iscsi(object):
                                stdout="/dev/tty5", stderr="/dev/tty5")
         time.sleep(1)
 
-        if intf:
-            w.pop()
+        status.no_longer_busy()
 
         self._startIBFT(intf)
         self.started = True
@@ -254,9 +253,9 @@ class iscsi(object):
         rc = False # assume failure
         msg = ""
 
-        if intf:
-            w = intf.waitWindow(_("Logging in to iSCSI node"),
-                                _("Logging in to iSCSI node %s") % node.name)
+        status = pyanaconda.view.Status()
+        status.i_am_busy(_("Logging in to iSCSI node"),
+                         _("Logging in to iSCSI node %s") % node.name)
         try:
             authinfo = None
             if username or password or r_username or r_password:
@@ -275,8 +274,8 @@ class iscsi(object):
         except (IOError, ValueError) as e:
             msg = str(e)
             log.warning("iSCSI: could not log into %s: %s" % (node.name, msg))
-        if intf:
-            w.pop()
+
+        status.no_longer_busy()
 
         return (rc, msg)
 

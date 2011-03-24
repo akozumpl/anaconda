@@ -33,6 +33,7 @@ import storage
 
 import selinux
 
+import pyanaconda.view
 from flags import flags
 from constants import *
 
@@ -187,7 +188,8 @@ class LiveCDCopyBackend(backend.AnacondaBackend):
 
     def _doFilesystemMangling(self, anaconda):
         log.info("doing post-install fs mangling")
-        wait = anaconda.intf.waitWindow(_("Post-Installation"),
+        status = pyanaconda.view.Status()
+        status.i_am_busy(_("Post-Installation"),
                                         _("Performing post-installation filesystem changes.  This may take several minutes."))
 
         # resize rootfs first, since it is 100% full due to genMinInstDelta
@@ -254,12 +256,6 @@ class LiveCDCopyBackend(backend.AnacondaBackend):
             source = "%s/%s" % (anaconda.rootPath, tocopy)
             dest   = "/mnt/%s" % (tocopy,)
 
-            # FIXME: all calls to wait.refresh() are kind of a hack... we
-            # should do better about not doing blocking things in the
-            # main thread.  but threading anaconda is a job for another
-            # time.
-            wait.refresh()
-
             try:
                 log.info("Gathering stats on %s" % (source,))
                 stats[tocopy]= os.stat(source)
@@ -269,11 +265,9 @@ class LiveCDCopyBackend(backend.AnacondaBackend):
 
             log.info("Copying %s to %s" % (source, dest))
             copytree(source, dest, True, True, flags.selinux)
-            wait.refresh()
 
             log.info("Removing %s" % (source,))
             shutil.rmtree(source)
-            wait.refresh()
 
         # unmount the target filesystems and remount in their final locations
         # so that post-install writes end up where they're supposed to end up
@@ -292,7 +286,7 @@ class LiveCDCopyBackend(backend.AnacondaBackend):
             os.chown(dest, st.st_uid, st.st_gid)
             os.chmod(dest, stat.S_IMODE(st.st_mode))
 
-        wait.pop()
+        status.no_longer_busy()
 
     def doPostInstall(self, anaconda):
         import rpm

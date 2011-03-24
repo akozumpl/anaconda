@@ -29,6 +29,7 @@ try:
 except ImportError:
     volume_key = None
 
+import pyanaconda.view
 from pyanaconda.anaconda_log import log_method_call
 from ..errors import *
 from ..devicelibs import crypto
@@ -188,12 +189,10 @@ class LUKS(DeviceFormat):
         if not self.hasKey:
             raise LUKSError("luks device has no key/passphrase")
 
-        intf = kwargs.get("intf")
-        w = None
-        if intf:
-            w = intf.waitWindow(_("Formatting"),
-                                _("Encrypting %s") % kwargs.get("device",
-                                                                self.device))
+        status = pyanaconda.view.Status()
+        status.i_am_busy(_("Formatting"),
+                         _("Encrypting %s") % kwargs.get("device",
+                                                         self.device))
 
         try:
             DeviceFormat.create(self, *args, **kwargs)
@@ -210,8 +209,7 @@ class LUKS(DeviceFormat):
             self.mapName = "luks-%s" % self.uuid
             self.notifyKernel()
         finally:
-            if w:
-                w.pop()
+            status.no_longer_busy()
 
     def destroy(self, *args, **kwargs):
         """ Create the format. """
