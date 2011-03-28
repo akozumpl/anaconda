@@ -26,6 +26,7 @@ import gobject
 import gtk
 import datacombo
 
+import pyanaconda.view
 from pyanaconda import gui
 from partition_ui_helpers_gui import *
 from pyanaconda.constants import *
@@ -125,7 +126,7 @@ class VolumeGroupEditor:
                 resize = True
 
         if used > availSpaceMB:
-            self.intf.messageWindow(_("Not enough space"),
+            self.status.need_answer_sync(_("Not enough space"),
                                     _("The physical extent size cannot be "
                                       "changed because otherwise the space "
                                       "required by the currently defined "
@@ -135,7 +136,7 @@ class VolumeGroupEditor:
             return 0
 
 	if resize:
-	    rc = self.intf.messageWindow(_("Confirm Physical Extent Change"),
+	    rc = self.status.need_answer_sync(_("Confirm Physical Extent Change"),
 					 _("This change in the value of the "
 					   "physical extent will require the "
 					   "sizes of the current logical "
@@ -171,7 +172,7 @@ class VolumeGroupEditor:
 	# see if PE is too large compared to smallest PV
 	maxpvsize = self.getSmallestPVSize()
 	if curpe > maxpvsize:
-            self.intf.messageWindow(_("Not enough space"),
+            self.status.need_answer_sync(_("Not enough space"),
                                     _("The physical extent size cannot be "
                                       "changed because the value selected "
 				      "(%(curpe)10.2f MB) is larger than the "
@@ -185,7 +186,7 @@ class VolumeGroupEditor:
 
 	# see if new PE will make any PV useless due to overhead
 	if lvm.clampSize(maxpvsize, curpe) < curpe:
-            self.intf.messageWindow(_("Not enough space"),
+            self.status.need_answer_sync(_("Not enough space"),
                                     _("The physical extent size cannot be "
                                       "changed because the value selected "
 				      "(%(curpe)10.2f MB) is too large "
@@ -200,7 +201,7 @@ class VolumeGroupEditor:
 	    
 
 	if self.getPVWastedRatio(curpe) > 0.10:
-	    rc = self.intf.messageWindow(_("Too small"),
+	    rc = self.status.need_answer_sync(_("Too small"),
 					 _("This change in the value of the "
 					   "physical extent will waste "
 					   "substantial space on one or more "
@@ -224,7 +225,7 @@ class VolumeGroupEditor:
 	    maxlv = lvm.getMaxLVSize()
 	    for lv in self.lvs.values():
 		if lv['size'] > maxlv:
-		    self.intf.messageWindow(_("Not enough space"),
+		    self.status.need_answer_sync(_("Not enough space"),
 					    _("The physical extent size "
 					      "cannot be changed because the "
 					      "resulting maximum logical "
@@ -302,7 +303,7 @@ class VolumeGroupEditor:
             try:
                 vg = self.getTempVG()
             except DeviceError as e:
-                self.intf.messageWindow(_("Not enough space"),
+                self.status.need_answer_sync(_("Not enough space"),
                                     _("You cannot remove this physical "
                                       "volume because otherwise the "
                                       "volume group will be too small to "
@@ -602,7 +603,7 @@ class VolumeGroupEditor:
             if sensitive and mountpoint:
                 msg = sanityCheckMountPoint(mountpoint)
                 if msg:
-                    self.intf.messageWindow(_("Mount Point Error"),
+                    self.status.need_answer_sync(_("Mount Point Error"),
                                             msg,
                                             custom_icon="error")
                     continue
@@ -612,7 +613,7 @@ class VolumeGroupEditor:
             if not templv.exists:
                 err = sanityCheckLogicalVolumeName(lvname)
                 if err:
-                    self.intf.messageWindow(_("Illegal Logical Volume Name"),
+                    self.status.need_answer_sync(_("Illegal Logical Volume Name"),
                                             err, custom_icon="error")
                     continue
 
@@ -627,7 +628,7 @@ class VolumeGroupEditor:
                     break
 
             if used:
-                self.intf.messageWindow(_("Illegal logical volume name"),
+                self.status.need_answer_sync(_("Illegal logical volume name"),
                                         _("The logical volume name \"%s\" is "
                                           "already in use. Please pick "
                                           "another.") % (lvname,), custom_icon="error")
@@ -669,7 +670,7 @@ class VolumeGroupEditor:
                             break
 
                 if used:
-                    self.intf.messageWindow(_("Mount point in use"),
+                    self.status.need_answer_sync(_("Mount point in use"),
                                             _("The mount point \"%s\" is in "
                                               "use. Please pick another.") %
                                             (mountpoint,),
@@ -685,7 +686,7 @@ class VolumeGroupEditor:
                     badsize = 1
 
                 if badsize or size <= 0:
-                    self.intf.messageWindow(_("Illegal size"),
+                    self.status.need_answer_sync(_("Illegal size"),
                                             _("The requested size as entered is "
                                               "not a valid number greater "
                                               "than 0."), custom_icon="error")
@@ -698,7 +699,7 @@ class VolumeGroupEditor:
             size = lvm.clampSize(size, pesize, roundup=True)
             maxlv = lvm.getMaxLVSize()
             if size > maxlv:
-                self.intf.messageWindow(_("Not enough space"),
+                self.status.need_answer_sync(_("Not enough space"),
                                         _("The current requested size "
                                           "(%(size)10.2f MB) is larger than "
                                           "the maximum logical volume size "
@@ -719,7 +720,7 @@ class VolumeGroupEditor:
                 try:
                     templv.size = size
                 except ValueError:
-                    self.intf.messageWindow(_("Not enough space"),
+                    self.status.need_answer_sync(_("Not enough space"),
                                             _("The size entered for this "
                                               "logical volume (%(size)d MB) "
                                               "combined with the size of the "
@@ -838,7 +839,7 @@ class VolumeGroupEditor:
 
     def addLogicalVolumeCB(self, widget):
         if self.numAvailableLVSlots() < 1:
-            self.intf.messageWindow(_("No free slots"),
+            self.status.need_answer_sync(_("No free slots"),
                 P_("You cannot create more than %d logical volume "
                    "per volume group.",
                    "You cannot create more than %d logical volumes "
@@ -849,7 +850,7 @@ class VolumeGroupEditor:
 
         (total, used, free, snapshots) = self.computeSpaceValues()
 	if free <= 0:
-	    self.intf.messageWindow(_("No free space"),
+	    self.status.need_answer_sync(_("No free space"),
 				    _("There is no room left in the "
 				      "volume group to create new logical "
 				      "volumes. "
@@ -886,7 +887,7 @@ class VolumeGroupEditor:
 	if logvolname is None:
 	    return
 
-	rc = self.intf.messageWindow(_("Confirm Delete"),
+	rc = self.status.need_answer_sync(_("Confirm Delete"),
 				_("Are you sure you want to delete the "
 				"logical volume \"%s\"?") % (logvolname,),
 				type = "custom", custom_buttons=["gtk-cancel", _("_Delete")], custom_icon="warning")
@@ -1002,7 +1003,7 @@ class VolumeGroupEditor:
 	    volname = self.volnameEntry.get_text().strip()
 	    err = sanityCheckVolumeGroupName(volname)
 	    if err:
-		self.intf.messageWindow(_("Invalid Volume Group Name"), err,
+		self.status.need_answer_sync(_("Invalid Volume Group Name"), err,
 					custom_icon="error")
 		continue
 
@@ -1011,7 +1012,7 @@ class VolumeGroupEditor:
 	    if origvname != volname:
                 # maybe we should see if _any_ device has this name
 		if volname in [vg.name for vg in self.storage.vgs]:
-		    self.intf.messageWindow(_("Name in use"),
+		    self.status.need_answer_sync(_("Name in use"),
 					    _("The volume group name \"%s\" is "
 					      "already in use. Please pick "
 					      "another." % (volname,)),
@@ -1270,6 +1271,7 @@ class VolumeGroupEditor:
                 return lv
 
     def __init__(self, anaconda, intf, parent, vg, isNew = 0):
+        self.status = pyanaconda.view.Status()
         self.storage = anaconda.storage
 
         # the vg instance we were passed
@@ -1313,7 +1315,7 @@ class VolumeGroupEditor:
 
         # if no PV exist, raise an error message and return
         if len(self.availlvmparts) < 1:
-	    self.intf.messageWindow(_("Not enough physical volumes"),
+	    self.status.need_answer_sync(_("Not enough physical volumes"),
 			       _("At least one unused physical "
 				 "volume partition is "
 				 "needed to create an LVM Volume Group.\n\n"

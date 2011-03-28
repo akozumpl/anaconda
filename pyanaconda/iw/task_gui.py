@@ -20,6 +20,8 @@
 import gtk
 import gtk.glade
 import gobject
+
+import pyanaconda.view
 from pyanaconda import gui
 import gzip
 from iw_gui import *
@@ -49,7 +51,8 @@ def setupRepo(anaconda, repo):
         anaconda.backend.doSackSetup(anaconda, thisrepo=repo.id, fatalerrors=False)
         log.info("added (UI) repository %s with source URL %s, id:%s" % (repo.name, repo.mirrorlist or repo.baseurl, repo.id))
     except (IOError, yum.Errors.RepoError) as e:
-        anaconda.intf.messageWindow(_("Error"),
+        status = pyanaconda.view.Status()
+        status.need_answer_sync(_("Error"),
               _("Unable to read package metadata from repository.  "
                 "This may be due to a missing repodata directory.  "
                 "Please ensure that your repository has been "
@@ -147,7 +150,8 @@ class RepoEditor:
         try:
             self.backend.ayum.repos.add(repo)
         except yum.Errors.DuplicateRepoError as e:
-            self.intf.messageWindow(_("Error"),
+            status = pyanaconda.view.Status()
+            status.need_answer_sync(_("Error"),
                   _("The repository %s has already been added.  Please "
                     "choose a different repository name and "
                     "URL.") % repo.name, type="ok", custom_icon="error")
@@ -233,8 +237,9 @@ class RepoEditor:
             proxy = self.proxyEntry.get_text()
             proxy.strip()
 
+            status = pyanaconda.view.Status()
             if not self._validURL(proxy):
-                self.intf.messageWindow(_("Invalid Proxy URL"),
+                status.need_answer_sync(_("Invalid Proxy URL"),
                                         _("You must provide an HTTP, HTTPS, "
                                           "or FTP URL to a proxy."))
                 return False
@@ -247,7 +252,7 @@ class RepoEditor:
         repourl = self.baseurlEntry.get_text()
         repourl.strip()
         if not self._validURL(repourl):
-            self.intf.messageWindow(_("Invalid Repository URL"),
+            status.need_answer_sync(_("Invalid Repository URL"),
                                     _("You must provide an HTTP, HTTPS, "
                                       "or FTP URL to a repository."))
             return False
@@ -269,7 +274,8 @@ class RepoEditor:
         ayum = self.anaconda.backend.ayum
         cdr = scanForMedia(ayum.tree, self.anaconda.storage)
         if not cdr:
-            self.intf.messageWindow(_("No Media Found"),
+            status = pyanaconda.view.Status()
+            status.need_answer_sync(_("No Media Found"),
                                     _("No installation media was found. "
                                       "Please insert a disc into your drive "
                                       "and try again."))
@@ -298,14 +304,15 @@ class RepoEditor:
 
         repo.name = self.nameEntry.get_text()
 
+        status = pyanaconda.view.Status()
         if not server or not path:
-            self.intf.messageWindow(_("Error"),
+            status.need_answer_sync(_("Error"),
                                     _("Please enter an NFS server and path."))
             return False
 
         if not network.hasActiveNetDev():
             if not self.anaconda.intf.enableNetwork():
-                self.intf.messageWindow(_("No Network Available"),
+                status.need_answer_sync(_("No Network Available"),
                     _("Some of your software repositories require "
                       "networking, but there was an error enabling the "
                       "network on your system."))
@@ -317,7 +324,7 @@ class RepoEditor:
         try:
             isys.mount("%s:%s" % (server, path), dest, "nfs", options=options)
         except Exception as e:
-            self.intf.messageWindow(_("Error Setting Up Repository"),
+            status.need_answer_sync(_("Error Setting Up Repository"),
                 _("The following error occurred while setting up the "
                   "repository:\n\n%s") % e)
             return False
@@ -341,7 +348,8 @@ class RepoEditor:
             reponame = self.nameEntry.get_text()
             reponame.strip()
             if len(reponame) == 0:
-                self.intf.messageWindow(_("Invalid Repository Name"),
+                status = pyanaconda.view.Status()
+                status.need_answer_sync(_("Invalid Repository Name"),
                                         _("You must provide a repository name."))
                 continue
 
@@ -429,7 +437,8 @@ class RepoMethodstrEditor(RepoEditor):
         repourl = self.baseurlEntry.get_text()
         repourl.strip()
         if not self._validURL(repourl):
-            self.intf.messageWindow(_("Invalid Repository URL"),
+            status = pyanaconda.view.Status()
+            status.need_answer_sync(_("Invalid Repository URL"),
                                     _("You must provide an HTTP, HTTPS, "
                                       "or FTP URL to a repository."))
             return False
@@ -439,7 +448,8 @@ class RepoMethodstrEditor(RepoEditor):
     def _applyMedia(self):
         cdr = scanForMedia(self.anaconda.backend.ayum.tree, self.anaconda.storage)
         if not cdr:
-            self.intf.messageWindow(_("No Media Found"),
+            status = pyanaconda.view.Status()
+            status.need_answer_sync(_("No Media Found"),
                                     _("No installation media was found. "
                                       "Please insert a disc into your drive "
                                       "and try again."))
@@ -461,7 +471,8 @@ class RepoMethodstrEditor(RepoEditor):
         options.strip()
 
         if not server or not path:
-            self.intf.messageWindow(_("Error"),
+            status = pyanaconda.view.Status()
+            status.need_answer_sync(_("Error"),
                                     _("Please enter an NFS server and path."))
             return False
 
@@ -499,7 +510,8 @@ class RepoCreator(RepoEditor):
 class TaskWindow(InstallWindow):
     def getNext(self):
         if not self._anyRepoEnabled():
-            self.anaconda.intf.messageWindow(_("No Software Repos Enabled"),
+            status = pyanaconda.view.Status()
+            status.need_answer_sync(_("No Software Repos Enabled"),
                 _("You must have at least one software repository enabled to "
                   "continue installation."))
             raise gui.StayOnScreen

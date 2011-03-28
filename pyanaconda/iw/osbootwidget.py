@@ -21,6 +21,8 @@
 
 import gtk
 import gobject
+
+import pyanaconda.view
 from pyanaconda import iutil
 import parted
 from pyanaconda import gui
@@ -190,6 +192,7 @@ class OSBootWidget:
         dialog.vbox.pack_start(table)
         dialog.show_all()
 
+        status = pyanaconda.view.Status()
         while True:
             rc = dialog.run()
 
@@ -211,7 +214,7 @@ class OSBootWidget:
                 continue
 
             if not label:
-                self.intf.messageWindow(_("Error"),
+                status.need_answer_sync(_("Error"),
                                         _("You must specify a label for the "
                                           "entry"),
                                         type="warning")
@@ -220,7 +223,7 @@ class OSBootWidget:
             foundBad = 0
             for char in self.illegalChars:
                 if char in label:
-                    self.intf.messageWindow(_("Error"),
+                    status.need_answer_sync(_("Error"),
                                             _("Boot label contains illegal "
                                               "characters"),
                                             type="warning")
@@ -243,7 +246,7 @@ class OSBootWidget:
                     continue
 
                 if thisLabel == label:
-                    self.intf.messageWindow(_("Duplicate Label"),
+                    status.need_answer_sync(_("Duplicate Label"),
                                             _("This label is already in "
                                               "use for another boot entry."),
                                             type="warning")
@@ -255,7 +258,7 @@ class OSBootWidget:
             # they could be duplicating a device, which we don't handle
             if dev.name in self.images.keys() and (not image.device or
                                                  dev != image.device):
-                self.intf.messageWindow(_("Duplicate Device"),
+                status.need_answer_sync(_("Duplicate Device"),
                                         _("This device is already being "
                                           "used for another boot entry."),
                                         type="warning")
@@ -304,7 +307,7 @@ class OSBootWidget:
                 
             self.fillOSList()
         else:
-            self.intf.messageWindow(_("Cannot Delete"),
+            status.need_answer_sync(_("Cannot Delete"),
                                     _("This boot target cannot be deleted "
 				      "because it is for the %s "
 				      "system you are about to install.")

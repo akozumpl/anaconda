@@ -29,6 +29,7 @@ import datacombo
 
 from pyanaconda import gui
 import pyanaconda.storage.devicelibs.mdraid as mdraidlib
+import pyanaconda.view
 from pyanaconda.storage.devices import *
 from pyanaconda.storage.deviceaction import *
 from partition_ui_helpers_gui import *
@@ -174,10 +175,11 @@ class RaidEditor:
 
             mountpoint = self.mountCombo.get_children()[0].get_text()
             (sensitive,) = self.mountCombo.get_properties('sensitive')
+            status = pyanaconda.view.Status()
             if sensitive and mountpoint:
                 msg = sanityCheckMountPoint(mountpoint)
                 if msg:
-                    self.intf.messageWindow(_("Mount Point Error"),
+                    status.need_answer_sync(_("Mount Point Error"),
                                             msg,
                                             custom_icon="error")
                     continue
@@ -192,7 +194,7 @@ class RaidEditor:
                         break
 
                 if used:
-                    self.intf.messageWindow(_("Mount point in use"),
+                    status.need_answer_sync(_("Mount point in use"),
                                             _("The mount point \"%s\" is in "
                                               "use. Please pick another.") %
                                             (mountpoint,),
@@ -224,7 +226,7 @@ class RaidEditor:
                                                   totalDevices=len(raidmembers),
                                                   memberDevices=members)
                 except ValueError as e:
-                    self.intf.messageWindow(_("Error"), str(e),
+                    status.need_answer_sync(_("Error"), str(e),
                                             custom_icon="error")
                     continue
 

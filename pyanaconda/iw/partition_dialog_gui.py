@@ -25,6 +25,7 @@ import copy
 import gobject
 import gtk
 
+import pyanaconda.view
 from pyanaconda import gui
 from pyanaconda.storage.devices import PartitionDevice, LUKSDevice
 from pyanaconda.storage.deviceaction import *
@@ -100,6 +101,7 @@ class PartitionEditor:
 	if self.dialog is None:
 	    return []
 
+        status = pyanaconda.view.Status()
         while 1:
             rc = self.dialog.run()
             actions = []
@@ -115,7 +117,7 @@ class PartitionEditor:
             if sensitive and mountpoint:
                 msg = sanityCheckMountPoint(mountpoint)
                 if msg:
-                    self.intf.messageWindow(_("Mount Point Error"),
+                    status.need_answer_sync(_("Mount Point Error"),
                                             msg,
                                             custom_icon="error")
                     self.dialog.present()
@@ -131,7 +133,7 @@ class PartitionEditor:
                         break
 
                 if used:
-                    self.intf.messageWindow(_("Mount point in use"),
+                    status.need_answer_sync(_("Mount point in use"),
                                             _("The mount point \"%s\" is in "
                                               "use. Please pick another.") %
                                             (mountpoint,),
@@ -190,7 +192,7 @@ class PartitionEditor:
 
                 err = doUIRAIDLVMChecks(format, disks, self.storage)
                 if err:
-                    self.intf.messageWindow(_("Error With Request"),
+                    status.need_answer_sync(_("Error With Request"),
                                             err, custom_icon="error")
                     self.dialog.present()
                     continue

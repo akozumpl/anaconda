@@ -23,6 +23,7 @@ import gtk
 import gobject
 import math
 
+import pyanaconda.view
 from pyanaconda.constants import *
 from pyanaconda import gui
 from partition_ui_helpers_gui import *
@@ -90,9 +91,10 @@ def whichToShrink(storage, intf):
     if biggest > -1:
         combo.set_active_iter(biggest)
 
+    status = pyanaconda.view.Status()
     if len(store) == 0:
         dialog.destroy()
-        intf.messageWindow(_("Error"),
+        status.need_answer_sync(_("Error"),
                            _("No partitions are available to resize.  Only "
                              "physical partitions with specific filesystems "
                              "can be resized."),
@@ -118,7 +120,7 @@ def whichToShrink(storage, intf):
         try:
             actions.append(ActionResizeFormat(request, newSize))
         except ValueError as e:
-            intf.messageWindow(_("Resize FileSystem Error"),
+            status.need_answer_sync(_("Resize FileSystem Error"),
                                _("%(device)s: %(msg)s")
                                  % {'device': request.format.device,
                                     'msg': e.message},
@@ -128,7 +130,7 @@ def whichToShrink(storage, intf):
         try:
             actions.append(ActionResizeDevice(request, newSize))
         except ValueError as e:
-            intf.messageWindow(_("Resize Device Error"),
+            status.need_answer_sync(_("Resize Device Error"),
                                _("%(name)s: %(msg)s")
                                  % {'name': request.name, 'msg': e.message},
                                type="warning", custom_icon="error")

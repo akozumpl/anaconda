@@ -19,6 +19,8 @@
 #
 
 import gtk, gobject
+
+import pyanaconda.view
 from pyanaconda import gui
 from DeviceSelector import *
 from pyanaconda.constants import *
@@ -40,8 +42,9 @@ class ClearDisksWindow (InstallWindow):
             if row[self.rightVisible]:
                 cleardisks.append(row[OBJECT_COL].name)
 
+        status = pyanaconda.view.Status()
         if len(cleardisks) == 0:
-            self.anaconda.intf.messageWindow(_("Error"),
+            status.need_answer_sync(_("Error"),
                                              _("You must select at least one "
                                                "drive to be used for installation."),
                                              custom_icon="error")
@@ -51,7 +54,7 @@ class ClearDisksWindow (InstallWindow):
         selected = self.rightDS.getSelected()
 
         if len(selected) == 0:
-            self.anaconda.intf.messageWindow(_("Error"),
+            status.need_answer_sync(_("Error"),
                                              _("You must select one drive to "
                                                "boot from."),
                                              custom_icon="error")

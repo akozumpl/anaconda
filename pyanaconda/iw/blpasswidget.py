@@ -20,6 +20,8 @@
 #
 
 import gtk
+
+import pyanaconda.view
 from pyanaconda import gui
 from pyanaconda.constants import *
 
@@ -125,6 +127,7 @@ class BootloaderPasswordWidget:
 
         dialog.show_all()
 
+        status = pyanaconda.view.Status()
         while True:
             rc = dialog.run()
             if rc in [gtk.RESPONSE_CANCEL, gtk.RESPONSE_DELETE_EVENT]:
@@ -132,7 +135,7 @@ class BootloaderPasswordWidget:
                 break
 
             if pwEntry.get_text() != confirmEntry.get_text():
-                self.intf.messageWindow(_("Passwords don't match"),
+                status.need_answer_sync(_("Passwords don't match"),
                                         _("Passwords do not match"),
                                         type='warning')
                 continue
@@ -141,7 +144,7 @@ class BootloaderPasswordWidget:
             if not thePass:
                 continue
             if len(thePass) < 6:
-                ret = self.intf.messageWindow(_("Warning"),
+                ret = status.need_answer_sync(_("Warning"),
                                     _("Your boot loader password is shorter than "
                                       "six characters.  We recommend a longer "
                                       "boot loader password."

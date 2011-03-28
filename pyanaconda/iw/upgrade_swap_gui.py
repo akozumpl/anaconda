@@ -19,6 +19,7 @@
 # Author(s): Mike Fulbright <msf@redhat.com>
 #
 
+import pyanaconda.view
 from pyanaconda import iutil
 from pyanaconda import upgrade
 from pyanaconda import gui
@@ -181,7 +182,8 @@ class UpgradeSwapWindow (InstallWindow):
 
 
     def warning(self):
-        rc = self.intf.messageWindow(_("Warning"), 
+        status = pyanaconda.view.Status()
+        rc = status.need_answer_sync(_("Warning"), 
                     _("A swap file is strongly recommended. "
                       "Failure to create one could cause the installer "
                       "to abort abnormally.  Are you sure you wish "
@@ -189,13 +191,15 @@ class UpgradeSwapWindow (InstallWindow):
         return rc
 
     def swapWrongSize(self):
-        rc = self.intf.messageWindow(_("Warning"), 
+        status = pyanaconda.view.Status()
+        rc = status.need_answer_sync(_("Warning"), 
                     _("The swap file must be between 1 and 2000 MB in size."),
                        type = "okcancel")
         return rc
 
     def swapTooBig(self):
-        rc = self.intf.messageWindow(_("Warning"), 
+        status = pyanaconda.view.Status()
+        rc = status.need_answer_sync(_("Warning"),
                     _("There is not enough space on the device you "
 			  "selected for the swap partition."),
                        type = "okcancel")

@@ -27,6 +27,7 @@ from pyanaconda import iutil
 import itertools
 import parted
 import _ped
+import pyanaconda.view
 from DeviceSelector import *
 from pyanaconda.baseudev import *
 from pyanaconda.constants import *
@@ -429,7 +430,8 @@ class FilterWindow(InstallWindow):
                 selected.update(set(members))
 
         if len(selected) == 0:
-            self.anaconda.intf.messageWindow(_("Error"),
+            status = pyanaconda.view.Status()
+            status.need_answer_sync(_("Error"),
                                              _("You must select at least one "
                                                "drive to be used for installation."),
                                              custom_icon="error")

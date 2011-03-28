@@ -22,6 +22,8 @@
 #
 
 import string
+
+import pyanaconda.view
 from iw_gui import *
 from pyanaconda import gui
 from pyanaconda import network
@@ -77,14 +79,15 @@ class NetworkWindow(InstallWindow):
         hostname = string.strip(self.hostnameEntry.get_text())
         herrors = network.sanityCheckHostname(hostname)
 
+        status = pyanaconda.view.Status()
         if not hostname:
-            self.intf.messageWindow(_("Error with Hostname"),
+            status.need_answer_sync(_("Error with Hostname"),
                                     _("You must enter a valid hostname for this "
                                       "computer."), custom_icon="error")
             self.hostnameError()
 
         if herrors is not None:
-            self.intf.messageWindow(_("Error with Hostname"),
+            status.need_answer_sync(_("Error with Hostname"),
                                     _("The hostname \"%(hostname)s\" is not "
                                       "valid for the following reason:\n\n"
                                       "%(herrors)s")

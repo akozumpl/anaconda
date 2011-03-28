@@ -36,6 +36,7 @@ import types
 import copy
 from decimal import Decimal
 
+import pyanaconda.view
 from pyanaconda import storage
 from iw_gui import *
 from pyanaconda.flags import flags
@@ -1341,7 +1342,8 @@ class PartitionWindow(InstallWindow):
         if (not activate_create_partition
                 and not activate_create_vg
                 and not activate_create_raid_dev):
-            self.intf.messageWindow(_("Cannot perform any creation action"),
+            status = pyanaconda.view.Status()
+            status.need_answer_sync(_("Cannot perform any creation action"),
                         _("Note that the creation action requires one of the "
                         "following:\n\n"
                         "* Free space in one of the Hard Drives.\n"
@@ -1459,7 +1461,8 @@ class PartitionWindow(InstallWindow):
                 "You currently have %d software RAID partitions free to use.",
                 availraidparts) % (availraidparts,)
         rinfo_message = "%s\n%s%s" % (whatis_r, whatneed_r, whathave_r)
-        rinfo_cb = lambda x : self.intf.messageWindow(_("About RAID"),
+        status = pyanaconda.view.Status()
+        rinfo_cb = lambda x :status.need_answer_sync(_("About RAID"),
                                 rinfo_message, custom_icon="information")
         rinfo_button.connect("clicked", rinfo_cb)
 
@@ -1484,7 +1487,7 @@ class PartitionWindow(InstallWindow):
             whathave_lvm = whathave_lvm + _("You currently have free space to "
                     "create PVs.")
         lvminfo_message = "%s\n%s%s" % (whatis_lvm, whatneed_lvm, whathave_lvm)
-        lvminfo_cb = lambda x : self.intf.messageWindow(_("About LVM"),
+        lvminfo_cb = lambda x :status.need_answer_sync(_("About LVM"),
                                     lvminfo_message, custom_icon="information")
         lvminfo_button.connect("clicked", lvminfo_cb)
 
@@ -1562,7 +1565,8 @@ class PartitionWindow(InstallWindow):
                 doPartitioning(self.storage)
                 rc = 0
             except PartitioningError as msg:
-                self.intf.messageWindow(_("Error Partitioning"),
+                status = pyanaconda.view.Status()
+                status.need_answer_sync(_("Error Partitioning"),
                        _("Could not allocate requested partitions: %s.") % (msg),
                                         custom_icon="error")
                 rc = -1
@@ -1603,7 +1607,8 @@ class PartitionWindow(InstallWindow):
         device = self.tree.getCurrentDevice()
         reason = self.storage.deviceImmutable(device, ignoreProtected=True)
         if reason:
-            self.intf.messageWindow(_("Unable To Edit"),
+            status = pyanaconda.view.Status()
+            status.need_answer_sync(_("Unable To Edit"),
                                     _("You cannot edit this device:\n\n%s")
                                     % reason,
                                     custom_icon="error")

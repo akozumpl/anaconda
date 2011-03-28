@@ -21,6 +21,7 @@
 
 import gtk
 import string
+import pyanaconda.view
 from pyanaconda import gui
 from iw_gui import *
 from pyanaconda.flags import flags
@@ -98,8 +99,9 @@ class AccountWindow (InstallWindow):
         pw = self.pw.get_text()
         confirm = self.confirm.get_text()
 
+        status = pyanaconda.view.Status()
         if not pw or not confirm:
-            self.intf.messageWindow(_("Error with Password"),
+            status.need_answer_sync(_("Error with Password"),
                                     _("You must enter your root password "
                                       "and confirm it by typing it a second "
                                       "time to continue."),
@@ -107,14 +109,14 @@ class AccountWindow (InstallWindow):
             self.passwordError()
 
         if pw != confirm:
-            self.intf.messageWindow(_("Error with Password"),
+            status.need_answer_sync(_("Error with Password"),
                                     _("The passwords you entered were "
                                       "different.  Please try again."),
                                     custom_icon="error")
             self.passwordError()
 
         if len(pw) < 6:
-            self.intf.messageWindow(_("Error with Password"),
+            status.need_answer_sync(_("Error with Password"),
                                     _("The root password must be at least "
                                       "six characters long."),
                                     custom_icon="error")
@@ -124,7 +126,7 @@ class AccountWindow (InstallWindow):
             cracklib.FascistCheck(pw)
         except ValueError as e:
             msg = gettext.ldgettext("cracklib", e)
-            ret = self.intf.messageWindow(_("Weak Password"),
+            ret = status.need_answer_sync(_("Weak Password"),
                                           _("You have provided a weak password: %s") % msg,
                                           type="custom", custom_icon="error",
                                           default=0,
@@ -135,7 +137,7 @@ class AccountWindow (InstallWindow):
         legal = string.digits + string.ascii_letters + string.punctuation + " "
         for letter in pw:
             if letter not in legal:
-                self.intf.messageWindow(_("Error with Password"),
+                status.need_answer_sync(_("Error with Password"),
                                         _("Requested password contains "
                                           "non-ASCII characters, which are "
                                           "not allowed."),

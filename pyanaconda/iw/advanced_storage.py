@@ -29,6 +29,7 @@ from pyanaconda import gui
 from pyanaconda import iutil
 from pyanaconda import network
 from pyanaconda import partIntfHelpers as pih
+import pyanaconda.status
 import pyanaconda.storage.fcoe
 import pyanaconda.storage.iscsi
 
@@ -374,8 +375,9 @@ def addFcoeDrive(anaconda):
             break
 
         iter = combo.get_active_iter()
+        status = pyanaconda.view.Status()
         if iter is None:
-            anaconda.intf.messageWindow(_("Error"),
+            status.need_answer_sync(_("Error"),
                                         _("You must select a NIC to use."),
                                         type="warning", custom_icon="error")
             continue
@@ -385,7 +387,7 @@ def addFcoeDrive(anaconda):
                                          dcb=dcb_cb.get_active(),
                                          intf=anaconda.intf)
         except IOError as e:
-            anaconda.intf.messageWindow(_("Error"), str(e))
+            status.need_answer_sync(_("Error"), str(e))
             rc = gtk.RESPONSE_CANCEL
 
         break
@@ -435,7 +437,8 @@ def addZfcpDrive(anaconda):
         try:
             anaconda.storage.zfcp.addFCP(devnum, wwpn, fcplun)
         except ValueError as e:
-            anaconda.intf.messageWindow(_("Error"), str(e))
+            status = pyanaconda.view.Status()
+            status.need_answer_sync(_("Error"), str(e))
             continue
 
         break
