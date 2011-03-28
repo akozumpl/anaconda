@@ -33,14 +33,16 @@ _ = lambda x: gettext.ldgettext("anaconda", x)
 
 class NetworkConfiguratorText:
     def _handleIPError(self, field, errmsg):
-        self.anaconda.intf.messageWindow(_("Error With Data"),
+        status = pyanaconda.view.Status()
+        status.need_answer_sync(_("Error With Data"),
                                          _("An error occurred converting the "
                                            "value entered for "
                                            "\"%(field)s\":\n%(errmsg)s") \
                                          % {'field': field, 'errmsg': errmsg})
 
     def _handleIPMissing(self, field):
-        self.anaconda.intf.messageWindow(_("Error With Data"),
+        status = pyanaconda.view.Status()
+        status.need_answer_sync(_("Error With Data"),
                                          _("A value is required for the field %s") % field)
 
     def __init__(self, screen, anaconda):
@@ -268,7 +270,8 @@ class NetworkConfiguratorText:
 
     def _checkValues(self):
         if not self.ipv4Selected and not self.ipv6Selected:
-            self.anaconda.intf.messageWindow(_("Missing protocol"),
+            status = pyanaconda.view.Status()
+            status.need_answer_sync(_("Missing protocol"),
                                _("You must select at least one protocol version"))
             return False
 
@@ -402,7 +405,8 @@ class NetworkConfiguratorText:
         result = self.anaconda.network.bringUp()
         status.no_longer_busy()
         if not result:
-            self.anaconda.intf.messageWindow(_("Network Error"),
+            status = pyanaconda.view.Status()
+            status.need_answer_sync(_("Network Error"),
                                              _("There was an error configuring "
                                                "network device %s") % dev.iface)
             dev.set(("ONBOOT", "no"))

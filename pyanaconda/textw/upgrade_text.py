@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import pyanaconda.view
 from pyanaconda import isys
 from pyanaconda import iutil
 from pyanaconda import upgrade
@@ -165,6 +166,7 @@ class UpgradeSwapWindow:
 	g.add(liGrid, 0, 2, padding = (0, 0, 0, 1))
 	g.add(buttons, 0, 3, anchorLeft = 1, growx = 1)
 
+        status = pyanaconda.view.Status()
 	while 1:
 	    result = g.run()
 
@@ -183,19 +185,19 @@ class UpgradeSwapWindow:
 	    try:
 		val = int(val)
 	    except ValueError:
-		anaconda.intf.messageWindow(_("Error"),
+		status.need_answer_sync(_("Error"),
                                    _("The value you entered is not a "
                                      "valid number."))
 
 	    if type(val) == type(1):
 		(dev, size) = fsList[listbox.current()]
 		if size < (val + 16):
-		    anaconda.intf.messageWindow(_("Error"),
+		    status.need_answer_sync(_("Error"),
                                        _("There is not enough space on the "
                                          "device you selected for the swap "
                                          "partition."))
                 elif val > 2000 or val < 1:
-                    anaconda.intf.messageWindow(_("Warning"), 
+                    status.need_answer_sync(_("Warning"),
                                        _("The swap file must be between 1 "
                                          "and 2000 MB in size."))
 		else:

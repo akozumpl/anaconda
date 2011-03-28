@@ -21,6 +21,7 @@ from snack import *
 from constants_text import *
 import cracklib
 
+import pyanaconda.view
 from pyanaconda.constants import *
 import gettext
 _ = lambda x: gettext.ldgettext("anaconda", x)
@@ -80,7 +81,7 @@ class RootPasswordWindow:
                     cracklib.FascistCheck(entry1.value())
                 except ValueError as e:
                     msg = gettext.ldgettext("cracklib", e)
-                    ret = anaconda.intf.messageWindow(_("Weak Password"),
+                    ret = status.need_answer_sync(_("Weak Password"),
                              _("You have provided a weak password: %s\n\n"
                                "Would you like to continue with this password?"
                                % (msg, )),
