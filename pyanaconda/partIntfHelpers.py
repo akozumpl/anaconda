@@ -26,6 +26,8 @@
 
 from abc import ABCMeta, abstractmethod
 import string
+
+import pyanaconda.view
 from constants import *
 import parted
 import iutil
@@ -119,15 +121,16 @@ def doDeleteDevice(intf, storage, device, confirm=1, quiet=0):
     storage is the storage instance
     device is the device to delete
     """
+    status = pyanaconda.view.Status()
     if not device:
-        intf.messageWindow(_("Unable To Delete"),
+        status.need_answer_sync(_("Unable To Delete"),
                            _("You must first select a partition to delete."),
 			   custom_icon="error")
         return False
 
     reason = storage.deviceImmutable(device)
     if reason:
-        intf.messageWindow(_("Unable To Delete"),
+        status.need_answer_sync(_("Unable To Delete"),
                            reason,
                            custom_icon="error")
         return False
@@ -151,8 +154,9 @@ def doClearPartitionedDevice(intf, storage, device, confirm=1, quiet=0):
             device -- a partitioned device such as a disk
 
      """
+    status = pyanaconda.view.Status()
     if confirm:
-	rc = intf.messageWindow(_("Confirm Delete"),
+	rc = status.need_answer_sync(_("Confirm Delete"),
 				_("You are about to delete all partitions on "
 				  "the device '%s'.") % (device.path,),
 				type="custom", custom_icon="warning",
@@ -203,7 +207,7 @@ def doClearPartitionedDevice(intf, storage, device, confirm=1, quiet=0):
 
     if immutable and not quiet:
         remaining = "\t" + "\n\t".join(p.path for p in immutable) + "\n"
-        intf.messageWindow(_("Notice"),
+        status.need_answer_sync(_("Notice"),
                            _("The following partitions were not deleted "
                              "because they are in use:\n\n%s") % remaining,
 			   custom_icon="warning")
@@ -219,7 +223,8 @@ def checkForSwapNoMatch(anaconda):
 
         if device.getFlag(parted.PARTITION_SWAP) and \
            not device.format.type == "swap":
-            rc = anaconda.intf.messageWindow(_("Format as Swap?"),
+            status = pyanaconda.view.Status()
+            rc = status.need_answer_sync(_("Format as Swap?"),
                                     _("%s has a partition type of 0x82 "
                                       "(Linux swap) but does not appear to "
                                       "be formatted as a Linux swap "
@@ -236,7 +241,8 @@ def checkForSwapNoMatch(anaconda):
 
 def mustHaveSelectedDrive(intf):
     txt =_("You need to select at least one hard drive to install %s.") % (productName,)
-    intf.messageWindow(_("Error"), txt, custom_icon="error")
+    status = pyanaconda.view.Status()
+    status.need_answer_sync(_("Error"), txt, custom_icon="error")
      
 def queryNoFormatPreExisting(intf):
     """Ensure the user wants to use a partition without formatting."""
@@ -248,7 +254,8 @@ def queryNoFormatPreExisting(intf):
             "However, if this partition contains files that you need "
             "to keep, such as home directories, then "
             "continue without formatting this partition.")
-    rc = intf.messageWindow(_("Format?"), txt, type = "custom", custom_buttons=[_("_Modify Partition"), _("Do _Not Format")], custom_icon="warning")
+    status = pyanaconda.view.Status()
+    rc = status.need_answer_sync(_("Format?"), txt, type = "custom", custom_buttons=[_("_Modify Partition"), _("Do _Not Format")], custom_icon="warning")
     return rc
 
 def partitionSanityErrors(intf, errors):
@@ -256,7 +263,8 @@ def partitionSanityErrors(intf, errors):
     rc = 1
     if errors:
         errorstr = string.join(errors, "\n\n")
-        rc = intf.messageWindow(_("Error with Partitioning"),
+        status = pyanaconda.view.Status()
+        rc = status.need_answer_sync(_("Error with Partitioning"),
                                 _("The following critical errors exist "
                                   "with your requested partitioning "
                                   "scheme. "
@@ -273,7 +281,8 @@ def partitionSanityWarnings(intf, warnings):
     rc = 1
     if warnings:
         warningstr = string.join(warnings, "\n\n")
-        rc = intf.messageWindow(_("Partitioning Warning"),
+        status = pyanaconda.view.Status()
+        rc = status.need_answer_sync(_("Partitioning Warning"),
                                      _("The following warnings exist with "
                                        "your requested partition scheme.\n\n%s"
                                        "\n\nWould you like to continue with "
@@ -297,7 +306,8 @@ def partitionPreExistFormatWarnings(intf, warnings):
         commentstr = ""
         for (dev, type, mntpt) in warnings:
             commentstr = commentstr + "/dev/%s %s %s\n" % (dev,type,mntpt)
-        rc = intf.messageWindow(_("Format Warning"), "%s\n\n%s\n\n%s" %
+        status = pyanaconda.view.Status()
+        rc = status.need_answer_sync(_("Format Warning"), "%s\n\n%s\n\n%s" %
                                 (labelstr1, labelstr2, commentstr),
                                 type="yesno", custom_icon="warning")
     return rc
@@ -340,7 +350,8 @@ def confirmDelete(intf, device):
         errmsg = (_("You are about to delete the %(type)s %(name)s") \
                   % {'type': device.type, 'name': device.name})
 
-    rc = intf.messageWindow(_("Confirm Delete"), errmsg, type="custom",
+    status = pyanaconda.view.Status()
+    rc = status.need_answer_sync(_("Confirm Delete"), errmsg, type="custom",
 				custom_buttons=[_("Cancel"), _("_Delete")],
 			    custom_icon="question")
 
@@ -348,7 +359,8 @@ def confirmDelete(intf, device):
 
 def confirmResetPartitionState(intf):
     """Confirm reset of partitioning to that present on the system."""
-    rc = intf.messageWindow(_("Confirm Reset"),
+    status = pyanaconda.view.Status()
+    rc = status.need_answer_sync(_("Confirm Reset"),
                             _("Are you sure you want to reset the "
                               "partition table to its original state?"),
                             type="yesno", custom_icon="question")
@@ -448,6 +460,7 @@ def drive_iscsi_addition(anaconda, wizard):
     STEP_DONE      = 10
 
     login_ok_nodes = []
+    status = pyanaconda.view.Status()
     step = STEP_DISCOVERY
     while step != STEP_DONE:
         # go through the wizard's dialogs, read the user input (selected nodes,
@@ -469,7 +482,7 @@ def drive_iscsi_addition(anaconda, wizard):
             elif step == STEP_NODES:
                 if len(found_nodes) < 1:
                     log.debug("iscsi: no new iscsi nodes discovered")
-                    anaconda.intf.messageWindow(_("iSCSI Nodes"), 
+                    status.need_answer_sync(_("iSCSI Nodes"), 
                                                 _("No new iSCSI nodes discovered"))
                     break
                 (rc, selected_nodes) = wizard.display_nodes_dialog(found_nodes)
@@ -511,13 +524,13 @@ def drive_iscsi_addition(anaconda, wizard):
 
         except (network.IPMissing, network.IPError) as msg:
             log.info("addIscsiDrive() cancelled due to an invalid IP address.")
-            anaconda.intf.messageWindow(_("iSCSI Error"), msg)
+            status.need_answer_sync(_("iSCSI Error"), msg)
             if step != STEP_DISCOVERY:
                 break
         except (ValueError, IOError) as e:
             log.info("addIscsiDrive() IOError exception: %s" % e)
             step_str = _("Discovery") if step == STEP_DISCOVERY else _("Login")
-            anaconda.intf.messageWindow(_("iSCSI %s Error") % step_str, str(e))
+            status.need_answer_sync(_("iSCSI %s Error") % step_str, str(e))
             break
 
     wizard.destroy_dialogs()

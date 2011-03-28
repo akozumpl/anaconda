@@ -125,7 +125,8 @@ class AnacondaKSScript(Script):
                     if err:
                         intf.detailedMessageWindow(_("Scriptlet Failure"), msg, err)
                     else:
-                        intf.messageWindow(_("Scriptlet Failure"), msg)
+                        status = pyanaconda.view.Status()
+                        status.need_answer_sync(_("Scriptlet Failure"), msg)
 
                 sys.exit(0)
 
@@ -1392,13 +1393,14 @@ def selectPackages(anaconda):
         if not ksdata.packages.seen:
             return
 
+    status = pyanaconda.view.Status()
     for pkg in ksdata.packages.packageList:
         num = anaconda.backend.selectPackage(pkg)
         if ksdata.packages.handleMissing == KS_MISSING_IGNORE or ignoreAll:
             continue
         if num > 0:
             continue
-        rc = anaconda.intf.messageWindow(_("Missing Package"),
+        rc = status.need_answer_sync(_("Missing Package"),
                                 _("You have specified that the "
                                   "package '%s' should be installed.  "
                                   "This package does not exist. "
@@ -1436,7 +1438,7 @@ def selectPackages(anaconda):
             if ksdata.packages.handleMissing == KS_MISSING_IGNORE or ignoreAll:
                 pass
             else:
-                rc = anaconda.intf.messageWindow(_("Missing Group"),
+                rc = status.need_answer_sync(_("Missing Group"),
                                         _("You have specified that the "
                                           "group '%s' should be installed. "
                                           "This group does not exist. "

@@ -27,6 +27,7 @@ from operator import add, sub, gt, lt
 import parted
 from pykickstart.constants import *
 
+import pyanaconda.view
 from pyanaconda.constants import *
 
 from errors import *
@@ -192,6 +193,7 @@ def doAutoPartition(anaconda):
         # previous boot order selection from clearpart_gui or kickstart
         anaconda.bootloader.clear_drive_list()
 
+    status = pyanaconda.view.Status()
     if anaconda.storage.doAutoPart:
         (disks, devs) = _createFreeSpacePartitions(anaconda.storage)
 
@@ -203,7 +205,7 @@ def doAutoPartition(anaconda):
                 msg = _("Could not find enough free space for automatic "
                         "partitioning, please use another partitioning method.")
 
-            anaconda.intf.messageWindow(_("Error Partitioning"), msg,
+            status.need_answer_sync(_("Error Partitioning"), msg,
                                         custom_icon='error')
 
             if anaconda.ksdata:
@@ -228,7 +230,8 @@ def doAutoPartition(anaconda):
         growLVM(anaconda.storage)
     except PartitioningWarning as msg:
         if not anaconda.ksdata:
-            anaconda.intf.messageWindow(_("Warnings During Automatic "
+            status = pyanaconda.view.Status()
+            status.need_answer_sync(_("Warnings During Automatic "
                                           "Partitioning"),
                            _("Following warnings occurred during automatic "
                            "partitioning:\n\n%s") % (msg,),
@@ -245,7 +248,7 @@ def doAutoPartition(anaconda):
                 anaconda.dispatch.skipStep("partition", skip = 0)
         else:
             extra = _("\n\nPress 'OK' to exit the installer.")
-        anaconda.intf.messageWindow(_("Error Partitioning"),
+        status.need_answer_sync(_("Error Partitioning"),
                _("Could not allocate requested partitions: \n\n"
                  "%(msg)s.%(extra)s") % {'msg': msg, 'extra': extra},
                custom_icon='error')
@@ -267,7 +270,7 @@ def doAutoPartition(anaconda):
         else:
             extra = _("\n\nPress 'OK' to choose a different partitioning option.")
 
-        anaconda.intf.messageWindow(_("Automatic Partitioning Errors"),
+        status.need_answer_sync(_("Automatic Partitioning Errors"),
                            _("The following errors occurred with your "
                              "partitioning:\n\n%(errortxt)s\n\n"
                              "This can happen if there is not enough "
@@ -279,7 +282,7 @@ def doAutoPartition(anaconda):
         # XXX if in kickstart we reboot
         #
         if anaconda.ksdata:
-            anaconda.intf.messageWindow(_("Unrecoverable Error"),
+            status.need_answer_sync(_("Unrecoverable Error"),
                                _("The system will now reboot."))
             sys.exit(0)
         anaconda.storage.reset()

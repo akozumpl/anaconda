@@ -119,7 +119,8 @@ class LiveCDCopyBackend(backend.AnacondaBackend):
 
         osimg_path = anaconda.methodstr[9:]
         if not stat.S_ISBLK(os.stat(osimg_path)[stat.ST_MODE]):
-            anaconda.intf.messageWindow(_("Unable to find image"),
+            status = pyanaconda.view.Status()
+            status.need_answer_sync(_("Unable to find image"),
                                _("The given location isn't a valid %s "
                                  "live CD to use as an installation source.")
                                %(productName,), type = "custom",
@@ -158,7 +159,8 @@ class LiveCDCopyBackend(backend.AnacondaBackend):
                 buf = os.read(osfd, readamt)
                 written = os.write(rootfd, buf)
             except (IOError, OSError):
-                rc = anaconda.intf.messageWindow(_("Error"),
+                status = pyanaconda.view.Status()
+                rc = status.need_answer_sync(_("Error"),
                         _("There was an error installing the live image to "
                           "your hard drive.  This could be due to bad media.  "
                           "Please verify your installation media.\n\nIf you "

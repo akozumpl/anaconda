@@ -100,7 +100,7 @@ class AnacondaCallback:
         self.ts = ayum.ts
         self.ayum = ayum
 
-        self.messageWindow = anaconda.intf.messageWindow
+        self.messageWindow = pyanaconda.view.Status().need_answer_sync
         self.progress = anaconda.intf.instProgress
         self.progressWindowClass = anaconda.intf.progressWindow
         self.rootPath = anaconda.rootPath
@@ -394,11 +394,12 @@ class AnacondaYum(yum.YumBase):
 
         dev.eject()
 
+        status = pyanaconda.view.Status()
         while True:
             if self.anaconda.intf:
                 self.anaconda.intf.beep()
 
-            self.anaconda.intf.messageWindow(_("Change Disc"),
+            status.need_answer_sync(_("Change Disc"),
                 _("Please insert the %(productName)s disc to continue.")
                 % {'productName': productName})
 
@@ -408,14 +409,14 @@ class AnacondaYum(yum.YumBase):
                 if verifyMedia(self.tree, self._timestamp):
                     break
 
-                self.anaconda.intf.messageWindow(_("Wrong Disc"),
+                status.need_answer_sync(_("Wrong Disc"),
                         _("That's not the correct %s disc.")
                           % (productName,))
 
                 dev.format.unmount()
                 dev.eject()
             except Exception:
-                self.anaconda.intf.messageWindow(_("Error"),
+                status.need_answer_sync(_("Error"),
                         _("Unable to access the disc."))
 
     def _mountInstallImage(self):
@@ -423,8 +424,9 @@ class AnacondaYum(yum.YumBase):
 
         # mountDirectory checks before doing anything, so it's safe to
         # call this repeatedly.
-        mountDirectory(self.anaconda.methodstr, self.anaconda.intf.messageWindow)
-        mountImage(self.isodir, self.tree, self.anaconda.intf.messageWindow)
+        status = pyanaconda.view.Status()
+        mountDirectory(self.anaconda.methodstr, status.need_answer_sync)
+        mountImage(self.isodir, self.tree, status.need_answer_sync)
 
     def configBaseURL(self):
         # We only have a methodstr if method= or repo= was passed to
@@ -474,7 +476,8 @@ class AnacondaYum(yum.YumBase):
                 # This really should be fixed in loader instead but for now see
                 # if there's images and if so go with this being an NFSISO
                 # install instead.
-                image = findFirstIsoImage(self.tree, self.anaconda.intf.messageWindow)
+                messageWindow = pyanaconda.view.Status().need_answer_sync
+                image = findFirstIsoImage(self.tree, messageWindow)
                 if image:
                     isys.umount(self.tree, removeDir=False)
                     self.anaconda.methodstr = "nfsiso:%s" % m[4:]
@@ -816,7 +819,8 @@ class AnacondaYum(yum.YumBase):
                 # "nfs:" and "nfs://" prefixes are accepted in ks repo --baseurl
                 if ksrepo.baseurl and ksrepo.baseurl.startswith("nfs:"):
                     if not network.hasActiveNetDev() and not self.anaconda.intf.enableNetwork():
-                        self.anaconda.intf.messageWindow(_("No Network Available"),
+                        status = pyanaconda.view.Status()
+                        status.need_answer_sync(_("No Network Available"),
                             _("Some of your software repositories require "
                               "networking, but there was an error enabling the "
                               "network on your system."),
@@ -910,7 +914,8 @@ class AnacondaYum(yum.YumBase):
             buttons = [_("Re_boot"), _("_Retry")]
 
         pkgFile = to_unicode(os.path.basename(package.remote_path))
-        rc = self.anaconda.intf.messageWindow(_("Error"),
+        status = pyanaconda.view.Status()
+        rc = status.need_answer_sync(_("Error"),
                    _("The file %s cannot be opened.  This is due to a missing "
                      "file, a corrupt package or corrupt media.  Please "
                      "verify your installation source.\n\n"
@@ -945,7 +950,8 @@ class AnacondaYum(yum.YumBase):
         if repo.anacondaBaseURLs[0].startswith("cdrom:"):
             dev = self.anaconda.storage.devicetree.getDeviceByName(self.anaconda.mediaDevice)
             dev.format.mountpoint = self.tree
-            unmountCD(dev, self.anaconda.intf.messageWindow)
+            messageWindow = pyanaconda.view.Status().need_answer_sync
+            unmountCD(dev, messageWindow)
 
     def urlgrabberFailureCB (self, obj, *args, **kwargs):
         if hasattr(obj, "exception"):
@@ -997,13 +1003,14 @@ class AnacondaYum(yum.YumBase):
             msg = _("There was an error running your transaction for "
                     "the following reason: %s\n") % str(e)
 
+            status = pyanaconda.view.Status()
             if self.anaconda.upgrade or self.anaconda.ksdata:
-                rc = intf.messageWindow(_("Error"), msg, type="custom",
+                rc = status.need_answer_sync(_("Error"), msg, type="custom",
                                         custom_icon="error",
                                         custom_buttons=[_("_Exit installer")])
                 sys.exit(1)
             else:
-                rc = intf.messageWindow(_("Error"), msg,
+                rc = status.need_answer_sync(_("Error"), msg,
                         type="custom", custom_icon="error",
                         custom_buttons=[_("_Back"), _("_Exit installer")])
 
@@ -1239,7 +1246,8 @@ reposdir=/etc/anaconda.repos.d,/tmp/updates/anaconda.repos.d,/tmp/product/anacon
         for repo in self.ayum.repos.listEnabled():
             if repo.needsNetwork() and not network.hasActiveNetDev():
                 if not anaconda.intf.enableNetwork():
-                    anaconda.intf.messageWindow(_("No Network Available"),
+                    status = pyanaconda.view.Status()
+                    status.need_answer_sync(_("No Network Available"),
                         _("Some of your software repositories require "
                           "networking, but there was an error enabling the "
                           "network on your system."),
@@ -1264,7 +1272,8 @@ reposdir=/etc/anaconda.repos.d,/tmp/updates/anaconda.repos.d,/tmp/product/anacon
             else:
                 break # success
 
-            rc = anaconda.intf.messageWindow(_("Error"),
+            status = pyanaconda.view.Status()
+            rc = status.need_answer_sync(_("Error"),
                                         _("Unable to read group information "
                                           "from repositories.  This is "
                                           "a problem with the generation "
@@ -1324,7 +1333,8 @@ reposdir=/etc/anaconda.repos.d,/tmp/updates/anaconda.repos.d,/tmp/product/anacon
                 if not fatalerrors:
                     raise RepoError, e
 
-                rc = anaconda.intf.messageWindow(_("Error"),
+                status = pyanaconda.view.Status()
+                rc = status.need_answer_sync(_("Error"),
                                    _("Unable to read package metadata. This may be "
                                      "due to a missing repodata directory.  Please "
                                      "ensure that your install tree has been "
@@ -1482,6 +1492,7 @@ reposdir=/etc/anaconda.repos.d,/tmp/updates/anaconda.repos.d,/tmp/product/anacon
         else:
             self.ayum.update()
 
+        status = pyanaconda.view.Status()
         while True:
             try:
                 (code, msgs) = self.ayum.buildTransaction()
@@ -1521,7 +1532,7 @@ reposdir=/etc/anaconda.repos.d,/tmp/updates/anaconda.repos.d,/tmp/product/anacon
                 break
             except RepoError as e:
                 # FIXME: would be nice to be able to recover here
-                rc = anaconda.intf.messageWindow(_("Error"),
+                rc = status.need_answer_sync(_("Error"),
                                _("Unable to read package metadata. This may be "
                                  "due to a missing repodata directory.  Please "
                                  "ensure that your install tree has been "
@@ -1543,7 +1554,7 @@ reposdir=/etc/anaconda.repos.d,/tmp/updates/anaconda.repos.d,/tmp/product/anacon
             largePart = anaconda.storage.mountpoints.get("/usr", anaconda.storage.rootDevice)
 
             if largePart and largePart.size < self.totalSize / 1024:
-                rc = anaconda.intf.messageWindow(_("Error"),
+                rc = status.need_answer_sync(_("Error"),
                                         _("Your selected packages require %d MB "
                                           "of free space for installation, but "
                                           "you do not have enough available.  "

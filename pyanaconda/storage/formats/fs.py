@@ -32,8 +32,9 @@ import os
 import sys
 import tempfile
 import selinux
-from pyanaconda import isys
 
+import pyanaconda.view
+from pyanaconda import isys
 from ..errors import *
 from . import DeviceFormat, register_device_format
 from pyanaconda import iutil
@@ -536,7 +537,8 @@ class FS(DeviceFormat):
                          "interactively.  Restart installation after you "
                          "have corrected the problems on the filesystem.")
 
-                intf.messageWindow(_("Unrecoverable Error"),
+                status = pyanaconda.view.Status()
+                status.need_answer_sync(_("Unrecoverable Error"),
                                    hdr + "\n\n" + msg + "\n\n" + help,
                                    custom_icon='error')
                 sys.exit(0)

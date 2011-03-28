@@ -27,6 +27,7 @@ from udev import udev_settle
 import gettext
 _ = lambda x: gettext.ldgettext("anaconda", x)
 
+import pyanaconda.view
 from pyanaconda import iutil
 import logging
 log = logging.getLogger("anaconda")
@@ -372,7 +373,8 @@ class ZFCP:
                 self.addFCP(devnum, wwpn, fcplun)
             except ValueError as e:
                 if self.intf:
-                    self.intf.messageWindow(_("Error"), str(e))
+                    status = pyanaconda.view.Status()
+                    status.need_answer_sync(_("Error"), str(e))
                 else:
                     log.warning(str(e))
 

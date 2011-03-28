@@ -1564,7 +1564,8 @@ class SILO(YabootSILOBase):
 # go somewhere
 def bootloaderSetupChoices(anaconda):
     if anaconda.dir == DISPATCH_BACK:
-        rc = anaconda.intf.messageWindow(_("Warning"),
+        status = pyanaconda.view.Status()
+        rc = status.need_answer_sync(_("Warning"),
                 _("Filesystems have already been activated.  You "
                   "cannot go back past this point.\n\nWould you like to "
                   "continue with the installation?"),
@@ -1618,8 +1619,7 @@ def writeBootloader(anaconda):
     kernel_versions = anaconda.backend.kernelVersionList(anaconda.rootPath)
     if not kernel_versions:
         log.warning("no kernel was installed -- bootloader config unchanged")
-        if anaconda.intf:
-            anaconda.intf.messageWindow(_("Warning"),
+        status.need_answer_sync(_("Warning"),
                         _("No kernel packages were installed on the system. "
                           "Bootloader configuration will not be changed."))
         return
@@ -1670,8 +1670,7 @@ def writeBootloader(anaconda):
     try:
         anaconda.bootloader.write(install_root=anaconda.rootPath)
     except BootLoaderError as e:
-        if anaconda.intf:
-            anaconda.intf.messageWindow(_("Warning"),
+        status.need_answer_sync(_("Warning"),
                             _("There was an error installing the bootloader.  "
                               "The system may not be bootable."))
     finally:

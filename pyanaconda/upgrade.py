@@ -29,6 +29,8 @@ import os.path
 import shutil
 import string
 import selinux
+
+import pyanaconda.view
 from flags import flags
 from constants import *
 from product import productName
@@ -48,7 +50,8 @@ def queryUpgradeContinue(anaconda):
     if anaconda.dir == DISPATCH_FORWARD:
         return
 
-    rc = anaconda.intf.messageWindow(_("Proceed with upgrade?"),
+    status = pyanaconda.view.Status()
+    rc = status.need_answer_sync(_("Proceed with upgrade?"),
                        _("The file systems of the Linux installation "
                          "you have chosen to upgrade have already been "
                          "mounted. You cannot go back past this point. "
@@ -88,7 +91,8 @@ def findRootParts(anaconda):
                 else:
                     oldInstalls += "%s %s on %s" % (info)
                 oldInstalls += "\n"
-            rc = anaconda.intf.messageWindow(_("Cannot Upgrade"),
+            status = pyanaconda.view.Status()
+            rc = status.need_answer_sync(_("Cannot Upgrade"),
                     _("Your current installation cannot be upgraded. This "
                       "is likely due to it being too old. Only the previous two "
                       "releases may be upgraded. To upgrade older releases "
@@ -197,11 +201,12 @@ def upgradeSwapSuggestion(anaconda):
 def upgradeMountFilesystems(anaconda):
     # mount everything and turn on swap
 
+    status = pyanaconda.view.Status()
     try:
         mountExistingSystem(anaconda, anaconda.upgradeRoot[0], allowDirty = 0)
     except ValueError as e:
         log.error("Error mounting filesystem: %s" % e)
-        anaconda.intf.messageWindow(_("Mount failed"),
+        status.need_answer_sync(_("Mount failed"),
             _("The following error occurred when mounting the file "
               "systems listed in /etc/fstab.  Please fix this problem "
               "and try to upgrade again.\n%s" % e))
@@ -210,14 +215,14 @@ def upgradeMountFilesystems(anaconda):
         # The upgrade root is search earlier but we give the message here.
         log.debug("No upgrade root was found.")
         if anaconda.ksdata and anaconda.ksdata.upgrade.upgrade:
-            anaconda.intf.messageWindow(_("Upgrade root not found"),
+            status.need_answer_sync(_("Upgrade root not found"),
                 _("The root for the previously installed system was not "
                   "found."), type="custom",
                 custom_icon="info",
                 custom_buttons=[_("Exit installer")])
             sys.exit(0)
         else:
-            rc = anaconda.intf.messageWindow(_("Upgrade root not found"),
+            rc = status.need_answer_sync(_("Upgrade root not found"),
                     _("The root for the previously installed system was not "
                       "found.  You can exit installer or backtrack to choose "
                       "installation instead of upgrade."),
@@ -247,7 +252,7 @@ def upgradeMountFilesystems(anaconda):
                     "symbolic links and restart the upgrade.\n\n")
         for n in badLinks:
             message = message + '\t' + n + '\n'
-        anaconda.intf.messageWindow(_("Absolute Symlinks"), message)
+        status.need_answer_sync(_("Absolute Symlinks"), message)
         sys.exit(0)
 
     # fix for 80446
@@ -264,7 +269,7 @@ def upgradeMountFilesystems(anaconda):
                     "as symbolic links and restart the upgrade.\n\n")
         for n in badLinks:
             message = message + '\t' + n + '\n'
-        anaconda.intf.messageWindow(_("Invalid Directories"), message)
+        status.need_answer_sync(_("Invalid Directories"), message)
         sys.exit(0)
 
     anaconda.storage.turnOnSwap(upgrading=True)

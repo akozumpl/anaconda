@@ -100,6 +100,7 @@ def storageInitialize(anaconda):
     lvm.lvm_vg_blacklist = []
 
     # Set up the protected partitions list now.
+    status = pyanaconda.view.Status()
     if anaconda.protected:
         storage.config.protectedDevSpecs.extend(anaconda.protected)
         storage.reset()
@@ -108,7 +109,7 @@ def storageInitialize(anaconda):
             if anaconda.upgrade:
                 return
             else:
-                anaconda.intf.messageWindow(_("Unknown Device"),
+                status.need_answer_sync(_("Unknown Device"),
                     _("The installation source given by device %s "
                       "could not be found.  Please check your "
                       "parameters and try again.") % anaconda.protected,
@@ -118,7 +119,7 @@ def storageInitialize(anaconda):
         storage.reset()
 
     if not storage.disks:
-        rc = anaconda.intf.messageWindow(_("No disks found"),
+        rc = status.need_answer_sync(_("No disks found"),
                 _("No usable disks have been found."),
                 type="custom",
                 custom_buttons = [_("Back"), _("_Exit installer")],
@@ -129,8 +130,9 @@ def storageInitialize(anaconda):
 
 # dispatch.py helper function
 def storageComplete(anaconda):
+    status = pyanaconda.view.Status()
     if anaconda.dir == DISPATCH_BACK:
-        rc = anaconda.intf.messageWindow(_("Installation cannot continue."),
+        rc = status.need_answer_sync(_("Installation cannot continue."),
                                 _("The storage configuration you have "
                                   "chosen has already been activated. You "
                                   "can no longer return to the disk editing "
@@ -159,7 +161,7 @@ def storageComplete(anaconda):
                 anaconda.storage.encryptionRetrofit = retrofit
                 break
             else:
-                rc = anaconda.intf.messageWindow(_("Encrypt device?"),
+                rc = status.need_answer_sync(_("Encrypt device?"),
                             _("You specified block device encryption "
                               "should be enabled, but you have not "
                               "supplied a passphrase. If you do not "
@@ -226,7 +228,7 @@ def storageComplete(anaconda):
             return DISPATCH_BACK
         sys.exit(1)
 
-    rc = anaconda.intf.messageWindow(_("Confirm"),
+    rc = status.need_answer_sync(_("Confirm"),
                                 _("The partitioning options you have selected "
                                   "will now be written to disk.  Any "
                                   "data on deleted or reformatted partitions "
@@ -270,7 +272,7 @@ def writeEscrowPackets(anaconda):
         status.no_longer_busy()
     except (IOError, RuntimeError) as e:
         status.no_longer_busy()
-        anaconda.intf.messageWindow(_("Error"),
+        status.need_answer_sync(_("Error"),
                                     _("Error storing an encryption key: "
                                       "%s\n") % str(e), type="custom",
                                     custom_icon="error",
@@ -1208,7 +1210,8 @@ class Storage(object):
     def checkNoDisks(self):
         """Check that there are valid disk devices."""
         if not self.disks and self.intf:
-            self.intf.messageWindow(_("No Drives Found"),
+            status = pyanaconda.view.Status()
+            status.need_answer_sync(_("No Drives Found"),
                                _("An error has occurred - no valid devices were "
                                  "found on which to create new file systems. "
                                  "Please check your hardware for the cause "
@@ -1513,7 +1516,8 @@ def mountExistingSystem(anaconda, rootEnt,
                                                             device.format.type))
             dirtyDevs.append(device.path)
 
-    messageWindow = anaconda.intf.messageWindow
+    status = pyanaconda.view.Status()
+    messageWindow = status.need_answer_sync
     if not allowDirty and dirtyDevs:
         messageWindow(_("Dirty File Systems"),
                       _("The following file systems for your Linux system "
@@ -1948,7 +1952,8 @@ class FSSet(object):
                 ret = 0
             else:
                 buttons = [_("Skip"), _("Format"), _("_Exit")]
-                ret = intf.messageWindow(_("Error"), msg, type="custom",
+                status = pyanaconda.view.Status()
+                status.need_answer_sync(_("Error"), msg, type="custom",
                                          custom_buttons=buttons,
                                          custom_icon="warning")
 
@@ -2035,7 +2040,8 @@ class FSSet(object):
                                     "device has not been initialized.\n\n"
                                     "Press OK to exit the installer.") % \
                                   {'name': name, 'msg': msg}
-                        intf.messageWindow(_("Error"), err)
+                        status = pyanaconda.view.Status()
+                        status.need_answer_sync(_("Error"), err)
                     sys.exit(0)
 
                 break
@@ -2084,6 +2090,7 @@ class FSSet(object):
             if readOnly:
                 options = "%s,%s" % (options, readOnly)
 
+            status = pyanaconda.view.Status()
             try:
                 device.format.setup(options=options,
                                     chroot=rootPath)
@@ -2092,7 +2099,7 @@ class FSSet(object):
 
                 if intf:
                     if e.errno == errno.EEXIST:
-                        intf.messageWindow(_("Invalid mount point"),
+                        status.need_answer_sync(_("Invalid mount point"),
                                            _("An error occurred when trying "
                                              "to create %s.  Some element of "
                                              "this path is not a directory. "
@@ -2104,7 +2111,7 @@ class FSSet(object):
                     else:
                         na = {'mountpoint': device.format.mountpoint,
                               'msg': e.strerror}
-                        intf.messageWindow(_("Invalid mount point"),
+                        status.need_answer_sync(_("Invalid mount point"),
                                            _("An error occurred when trying "
                                              "to create %(mountpoint)s: "
                                              "%(msg)s.  This is "
@@ -2121,7 +2128,7 @@ class FSSet(object):
                 if intf and not device.format.linuxNative:
                     na = {'path': device.path,
                           'mountpoint': device.format.mountpoint}
-                    ret = intf.messageWindow(_("Unable to mount filesystem"),
+                    status.need_answer_sync(_("Unable to mount filesystem"),
                                              _("An error occurred mounting "
                                              "device %(path)s as "
                                              "%(mountpoint)s.  You may "
@@ -2145,7 +2152,7 @@ class FSSet(object):
                     na = {'path': device.path,
                           'mountpoint': device.format.mountpoint,
                           'msg': msg}
-                    intf.messageWindow(_("Unable to mount filesystem"),
+                    status.need_answer_sync(_("Unable to mount filesystem"),
                                        _("An error occurred mounting "
                                          "device %(path)s as %(mountpoint)s: "
                                          "%(msg)s. This is "

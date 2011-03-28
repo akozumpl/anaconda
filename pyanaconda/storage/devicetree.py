@@ -26,6 +26,7 @@ import block
 import re
 import shutil
 
+import pyanaconda.view
 from errors import *
 from devices import *
 from deviceaction import *
@@ -98,7 +99,8 @@ def getLUKSPassphrase(intf, device, passphrases):
             passphrase_incorrect = False
         passphrase = intf.passphraseEntryWindow(device.name)
         if not passphrase:
-            rc = intf.messageWindow(_("Confirm"),
+            status = pyanaconda.view.Status()
+            rc = status.need_answer_sync(_("Confirm"),
                                     _("Are you sure you want to skip "
                                       "entering a passphrase for device "
                                       "%s?\n\n"
