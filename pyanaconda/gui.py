@@ -95,9 +95,9 @@ gui_thread_id = None
 
 def idle_gtk(func, *args, **kwargs):
     def return_false(func, *args, **kwargs):
-        gtk.gdk.threads_enter()
-        func(*args, **kwargs)
-        gtk.gdk.threads_leave()
+        # It is important the GDK lock is released upon exception.
+        with gtk.gdk.lock:
+            func(*args, **kwargs)
         return False
     gobject.idle_add(return_false, func, *args, **kwargs)
 
@@ -1546,11 +1546,10 @@ class InstallControlWindow:
         self._main_loop_running = True
 
         gtk.gdk.threads_init()
-        gtk.gdk.threads_enter()
         log.info("gui: entering gtk.main().")
-        gtk.main()
+        with gtk.gdk.lock:
+            gtk.main()
         log.info("gui: left gtk.main().")
-        gtk.gdk.threads_leave()
 
 class InstallControlState:
     def __init__ (self, cw):
