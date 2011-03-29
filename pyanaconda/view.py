@@ -12,7 +12,10 @@ log = logging.getLogger("anaconda")
 
 MESSAGE_WINDOW = 101
 PASSPHRASE_WINDOW = 102
-WAIT_WINDOW     = 103
+PROGRESS_PULSE = 103
+PROGRESS_WINDOW = 104
+UPDATE_PROGRESS = 105
+WAIT_WINDOW     = 106
 
 DISPLAY_STEP = 150
 
@@ -51,6 +54,30 @@ class Status(object):
     # asynchronous interface
     def destroy_window(self, wh):
         self.out_queue.put((DESTROY_WINDOW, wh, None))
+        self._update_ui()
+
+    def progress_pulse(self, wh):
+        self.out_queue.put((PROGRESS_PULSE, wh, None))
+        self._update_ui()
+
+    def progress_window(self, title, text, total, updpct = 0.05, pulse = False):
+        handle = self.StatusHandle()
+        dictionary = {"title" : title,
+                      "text" : text,
+                      "total" : total,
+                      "updpct" : updpct,
+                      "pulse" : pulse
+                      }
+        self.out_queue.put((PROGRESS_WINDOW,
+                            handle,
+                            dictionary))
+        self._update_ui()
+        return handle
+
+    def update_progress(self, handle, amount):
+        self.out_queue.put((UPDATE_PROGRESS,
+                            handle,
+                            self._to_dict(amount=amount)))
         self._update_ui()
 
     def wait_window(self, title, text):

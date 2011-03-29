@@ -926,11 +926,23 @@ class GuiView(pyanaconda.view.View):
             self.handles[handle].pop()
             self.handles.pop(handle)
         elif kind == pyanaconda.view.MESSAGE_WINDOW:
-            log.debug("GuiView: DESTROY_WINDOW")
+            log.debug("GuiView: MESSAGE_WINDOW")
             out_queue.put(self.intf.messageWindow(**parameters))
         elif kind == pyanaconda.view.PASSPHRASE_WINDOW:
             log.debug("GuiView: PASSPHRASE_WINDOW")
             out_queue.put(self.intf.passphraseEntryWindow(**parameters))
+        elif kind == pyanaconda.view.PROGRESS_PULSE:
+            log.debug("GuiView: PROGRESS_PULSE")
+            window = self.handles[handle]
+            window.pulse()
+        elif kind == pyanaconda.view.PROGRESS_WINDOW:
+            log.debug("GuiView: PROGRESS_WINDOW")
+            window = self.intf.progressWindow(**parameters)
+            self._register_widget(handle, window)
+        elif kind == pyanaconda.view.UPDATE_PROGRESS:
+            log.debug("GuiView: UPDATE_PROGRESS")
+            window = self.handles[handle]
+            window.set(parameters["amount"])
         elif kind == pyanaconda.view.WAIT_WINDOW:
             log.debug("GuiView: WAIT_WINDOW")
             window = self.intf.waitWindow(**parameters)

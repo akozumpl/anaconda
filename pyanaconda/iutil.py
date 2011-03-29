@@ -368,8 +368,9 @@ def execWithCallback(command, argv, stdin = None, stdout = None,
     return ExecProduct(rc, log_output , log_errors)
 
 def _pulseProgressCallback(data, callback_data=None):
-    if callback_data:
-        callback_data.pulse()
+    handle = callback_data
+    if handle:
+        handle.status.progress_pulse(handle)
 
 def execWithPulseProgress(command, argv, stdin = None, stdout = None,
                           stderr = None, echo = True, progress = None,
