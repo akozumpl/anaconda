@@ -30,9 +30,8 @@ def bind_view(view):
 
 class Status(object):
     class StatusHandle(object):
-        """ Intentionally empty object used only as a dictionary key in
-            the interfaces's View.
-        """
+        def __init__(self, status):
+            self.status = status
         pass
 
     def __init__(self):
@@ -61,7 +60,7 @@ class Status(object):
         self._update_ui()
 
     def progress_window(self, title, text, total, updpct = 0.05, pulse = False):
-        handle = self.StatusHandle()
+        handle = self.StatusHandle(self)
         dictionary = {"title" : title,
                       "text" : text,
                       "total" : total,
@@ -81,7 +80,7 @@ class Status(object):
         self._update_ui()
 
     def wait_window(self, title, text):
-        handle = self.StatusHandle()
+        handle = self.StatusHandle(self)
         self.out_queue.put((WAIT_WINDOW,
                         handle,
                         self._to_dict(title=title, text=text)))
@@ -98,7 +97,7 @@ class Status(object):
         return self.in_queue.get()
 
     def i_am_busy(self, reason, details):
-        handle = self.StatusHandle()
+        handle = self.StatusHandle(self)
         self.out_queue.put((WAIT_WINDOW,
                         handle,
                         self._to_dict(title=reason, text=details)))
