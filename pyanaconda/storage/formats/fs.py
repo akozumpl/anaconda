@@ -350,24 +350,23 @@ class FS(DeviceFormat):
 
         argv = self._getFormatOptions(options=options)
 
-        w = None
-        if intf:
-            w = intf.progressWindow(_("Formatting"),
-                                    _("Creating %(type)s filesystem on %(device)s")
-                                    % {"type": self.type, "device": self.device},
-                                    100, pulse = True)
+        status = pyanaconda.view.Status()
+        progress = status.progress_window(
+            _("Formatting"),
+            _("Creating %(type)s filesystem on %(device)s") % \
+                {"type": self.type, "device": self.device},
+            100, pulse = True)
 
         try:
             ret = iutil.execWithPulseProgress(self.mkfsProg,
                                               argv,
                                               stdout="/dev/tty5",
                                               stderr="/dev/tty5",
-                                              progress=w)
+                                              progress=progress)
         except Exception as e:
             raise FormatCreateError(e, self.device)
         finally:
-            if w:
-                w.pop()
+            status.destroy_window(progress)
 
         if ret.rc:
             raise FormatCreateError("format failed: %s" % ret.rc, self.device)
@@ -453,24 +452,22 @@ class FS(DeviceFormat):
             log.info("Minimum size changed, setting targetSize on %s to %s" \
                      % (self.device, self.targetSize))
 
-        w = None
-        if intf:
-            w = intf.progressWindow(_("Resizing"),
-                                    _("Resizing filesystem on %s")
-                                    % (self.device,),
-                                    100, pulse = True)
+        status = pyanaconda.view.Status()
+        progress = status.progress_window(_("Resizing"),
+                                _("Resizing filesystem on %s")
+                                % (self.device,),
+                                100, pulse = True)
 
         try:
             ret = iutil.execWithPulseProgress(self.resizefsProg,
                                              self.resizeArgs,
                                              stdout="/dev/tty5",
                                              stderr="/dev/tty5",
-                                             progress=w)
+                                             progress=progress)
         except Exception as e:
             raise FSResizeError(e, self.device)
         finally:
-            if w:
-                w.pop()
+            status.destroy_window(progress)
 
         if ret.rc:
             raise FSResizeError("resize failed: %s" % ret.rc, self.device)
@@ -503,24 +500,22 @@ class FS(DeviceFormat):
         if not os.path.exists(self.device):
             raise FSError("device does not exist")
 
-        w = None
-        if intf:
-            w = intf.progressWindow(_("Checking"),
-                                    _("Checking filesystem on %s")
-                                    % (self.device),
-                                    100, pulse = True)
+        status = pyanaconda.view.Status()
+        progress = status.progress_window(_("Checking"),
+                                _("Checking filesystem on %s")
+                                % (self.device),
+                                100, pulse = True)
 
         try:
             ret = iutil.execWithPulseProgress(self.fsckProg,
                                              self._getCheckArgs(),
                                              stdout="/dev/tty5",
                                              stderr="/dev/tty5",
-                                             progress = w)
+                                             progress = progress)
         except Exception as e:
             raise FSError("filesystem check failed: %s" % e)
         finally:
-            if w:
-                w.pop()
+            status.destroy_window(progress)
 
         if self._fsckFailed(ret.rc):
             hdr = _("%(type)s filesystem check failure on %(device)s: ") % \

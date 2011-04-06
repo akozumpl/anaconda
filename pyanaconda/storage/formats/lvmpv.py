@@ -22,6 +22,7 @@
 
 import os
 
+import pyanaconda.view
 from pyanaconda.anaconda_log import log_method_call
 from parted import PARTITION_LVM
 from ..errors import *
@@ -98,14 +99,13 @@ class LVMPhysicalVolume(DeviceFormat):
         log_method_call(self, device=self.device,
                         type=self.type, status=self.status)
         intf = kwargs.get("intf")
-        w = None
-        if intf:
-            w = intf.progressWindow(_("Formatting"),
-                                    _("Creating %(type)s on %(device)s")
-                                    % {"type": self.type,
-                                       "device": kwargs.get("device",
-                                                            self.device)},
-                                    100, pulse = True)
+        status = pyanaconda.view.Status()
+        progress = status.progress_window(_("Formatting"),
+                                _("Creating %(type)s on %(device)s")
+                                % {"type": self.type,
+                                   "device": kwargs.get("device",
+                                                        self.device)},
+                                100, pulse = True)
 
         try:
             DeviceFormat.create(self, *args, **kwargs)
@@ -116,15 +116,14 @@ class LVMPhysicalVolume(DeviceFormat):
             # hammer...
             DeviceFormat.destroy(self, *args, **kwargs)
 
-            lvm.pvcreate(self.device, progress=w)
+            lvm.pvcreate(self.device, progress=progress)
         except Exception:
             raise
         else:
             self.exists = True
             self.notifyKernel()
         finally:
-            if w:
-                w.pop()
+            status.destroy_window(progress)
 
     def destroy(self, *args, **kwargs):
         """ Destroy the format. """

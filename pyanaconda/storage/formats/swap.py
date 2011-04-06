@@ -20,6 +20,7 @@
 # Red Hat Author(s): Dave Lehman <dlehman@redhat.com>
 #
 
+import pyanaconda.view
 from pyanaconda.iutil import numeric_type
 from parted import PARTITION_SWAP, fileSystemType
 from pyanaconda.anaconda_log import log_method_call
@@ -156,23 +157,21 @@ class SwapSpace(DeviceFormat):
         elif self.status:
             raise SwapSpaceError("device exists and is active")
 
-        w = None
-        if intf:
-            w = intf.progressWindow(_("Formatting"),
-                                    _("Creating %(type)s on %(device)s")
-                                    % {"type": self.type, "device": kwargs.get("device", self.device)},
-                                    100, pulse = True)
+        status = pyanaconda.view.Status()
+        progress = status.progress_window(_("Formatting"),
+                                _("Creating %(type)s on %(device)s")
+                                % {"type": self.type, "device": kwargs.get("device", self.device)},
+                                100, pulse = True)
 
         try:
             DeviceFormat.create(self, *args, **kwargs)
-            swap.mkswap(self.device, label=self.label, progress=w)
+            swap.mkswap(self.device, label=self.label, progress=progress)
         except Exception:
             raise
         else:
             self.exists = True
         finally:
-            if w:
-                w.pop()
+            status.destroy_window(progress)
 
     def writeKS(self, f):
         f.write("swap")

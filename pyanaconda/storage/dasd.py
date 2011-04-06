@@ -22,6 +22,7 @@
 from pyanaconda import iutil
 import sys
 import os
+import pyanaconda.view
 from pyanaconda.storage.errors import DasdFormatError
 from pyanaconda.storage.devices import deviceNameToDiskByPath
 from pyanaconda.constants import *
@@ -150,46 +151,42 @@ class DASD:
 
         # format DASDs
         argv = ["-P"] + self.commonArgv
-        update = self._updateProgressWindow
 
         title = P_("Formatting DASD Device", "Formatting DASD Devices", c)
         msg = P_("Preparing %d DASD device for use with Linux..." % c,
                  "Preparing %d DASD devices for use with Linux..." % c, c)
 
-        if intf:
-            if self.totalCylinders:
-                pw = intf.progressWindow(title, msg, 1.0)
-            else:
-                pw = intf.progressWindow(title, msg, 100, pulse=True)
+        status = pyanaconda.view.Status()
+        if self.totalCylinders:
+            progress = status.progress_window(title, msg, 1.0)
+        else:
+            progress = status.progress_window(title, msg, 100, pulse=True)
 
         for dasd, bypath in self._dasdlist:
             log.info("Running dasdfmt on %s" % (bypath,))
             arglist = argv + ["/dev/" + dasd]
 
             try:
-                if intf and self.totalCylinders:
+                if self.totalCylinders:
+                    update = self._updateProgressWindow
                     ret = iutil.execWithCallback(self.dasdfmt, arglist,
                                                  stdout=out, stderr=err,
                                                  callback=update,
-                                                 callback_data=pw,
+                                                 callback_data=progress,
                                                  echo=False)
                     rc = ret.rc
-                elif intf:
+                else:
                     ret = iutil.execWithPulseProgress(self.dasdfmt, arglist,
                                                       stdout=out, stderr=err,
-                                                      progress=pw)
+                                                      progress=progress)
                     rc = ret.rc
-                else:
-                    rc = iutil.execWithRedirect(self.dasdfmt, arglist,
-                                                stdout=out, stderr=err)
             except Exception as e:
                 raise DasdFormatError(e, bypath)
 
             if rc:
                 raise DasdFormatError("dasdfmt failed: %s" % rc, bypath)
 
-        if intf:
-            pw.pop()
+            status.destroy_window(progress)
 
     def addDASD(self, dasd):
         """ Adds a DASDDevice to the internal list of DASDs. """
@@ -219,7 +216,9 @@ class DASD:
         if data == '\n':
             # each newline we see in this output means one more cylinder done
             self._completedCylinders += 1.0
-            callback_data.set(self._completedCylinders / self.totalCylinders)
+            progress_handler = callback_data
+            progress_handler.status.update_progress(
+                progress_handler, self._completedCylinders / self.totalCylinders)
 
 # Create DASD singleton
 DASD = DASD()
