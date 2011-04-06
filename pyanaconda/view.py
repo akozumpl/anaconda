@@ -10,6 +10,7 @@ log = logging.getLogger("anaconda")
 # getLuksPassphrase
 # detailedMessageWindow
 
+INITIALIZE_DISK_WINDOW = 107
 MESSAGE_WINDOW = 101
 PASSPHRASE_WINDOW = 102
 PROGRESS_PULSE = 103
@@ -110,6 +111,12 @@ class Status(object):
                                 default=default, custom_buttons=custom_buttons,
                                 custom_icon=custom_icon)
         self.out_queue.put((MESSAGE_WINDOW, None, argdict))
+        self._update_ui()
+        return self.in_queue.get()
+
+    def need_initialize_disk_answer_sync(self, path, description, size):
+        argdict = self._to_dict(path=path, description=description, size=size)
+        self.out_queue.put((INITIALIZE_DISK_WINDOW, None, argdict))
         self._update_ui()
         return self.in_queue.get()
 

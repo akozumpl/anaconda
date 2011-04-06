@@ -1096,9 +1096,10 @@ class DeviceTree(object):
                 # some devices don't have a /dev/disk/by-path/ #!@#@!@#
                 bypath = device.name
 
-            initcb = lambda: self.intf.questionInitializeDisk(bypath,
-                                                              description,
-                                                              device.size)
+            status = pyanaconda.view.Status()
+            initcb = lambda: status.need_initialize_disk_answer_sync(bypath,
+                                                                     description,
+                                                                     device.size)
         try:
             format = getFormat("disklabel",
                                device=device.path,

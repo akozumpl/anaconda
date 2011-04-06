@@ -916,7 +916,10 @@ class GuiView(pyanaconda.view.View):
         #   anyway)
 
         (kind, handle, parameters) = in_queue.get()
-        if kind == pyanaconda.view.DISPLAY_STEP:
+        if kind == pyanaconda.view.INITIALIZE_DISK_WINDOW:
+            log.debug("GuiView: INITIALIZE_DISK_WINDOW")
+            out_queue.put(self.intf.questionInitializeDisk(**parameters))
+        elif kind == pyanaconda.view.DISPLAY_STEP:
             log.debug("GuiView: DISPLAY_STEP")
             # tell the icw where we expect the return value
             self.intf.icw.rc_queue = out_queue
