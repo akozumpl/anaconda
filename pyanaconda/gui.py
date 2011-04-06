@@ -928,6 +928,9 @@ class GuiView(pyanaconda.view.View):
             log.debug("GuiView: DESTROY_WINDOW")
             self.handles[handle].pop()
             self.handles.pop(handle)
+        elif kind == pyanaconda.view.KICKSTART_ERROR_WINDOW:
+            log.debug("GuiView: KICKSTART_ERROR_WINDOW")
+            out_queue.put(self.intf.kickstartErrorWindow(**parameters))
         elif kind == pyanaconda.view.MESSAGE_WINDOW:
             log.debug("GuiView: MESSAGE_WINDOW")
             out_queue.put(self.intf.messageWindow(**parameters))

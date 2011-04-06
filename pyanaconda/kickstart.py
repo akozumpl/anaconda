@@ -149,11 +149,12 @@ def getEscrowCertificate(anaconda, url):
         return anaconda.storage.escrowCertificates[url]
 
     needs_net = not url.startswith("/") and not url.startswith("file:")
+    status = pyanaconda.view.Status()
     if needs_net and not network.hasActiveNetDev():
         msg = _("Escrow certificate with url %s requires network to be enabled "
                 "in loader or configured in kickstart file." % url)
         if anaconda.intf:
-            anaconda.intf.kickstartErrorWindow(msg)
+            status.announce_kickstart_error_sync(msg)
             sys.exit(1)
         else:
             stderrLog.critical(msg)
@@ -166,7 +167,7 @@ def getEscrowCertificate(anaconda, url):
     except urlgrabber.grabber.URLGrabError as e:
         msg = _("The following error was encountered while downloading the escrow certificate:\n\n%s" % e)
         if anaconda.intf:
-            anaconda.intf.kickstartErrorWindow(msg)
+            status.announce_kickstart_error_sync(msg)
             sys.exit(1)
         else:
             stderrLog.critical(msg)
@@ -1197,7 +1198,8 @@ class AnacondaKSHandler(superclass):
                 obj.execute()
         except KickstartError as e:
             if self.anaconda.intf:
-                self.anaconda.intf.kickstartErrorWindow(e.__str__())
+                status = pyanaconda.view.Status()
+                status.announce_kickstart_error_sync(e.__str__())
                 self.anaconda.intf.shutdown()
                 sys.exit(0)
             else:
@@ -1274,11 +1276,12 @@ def preScriptPass(anaconda, file):
     # generates an included file that has commands for later.
     ksparser = AnacondaPreParser(AnacondaKSHandler(anaconda))
 
+    status = pyanaconda.view.Status()
     try:
         ksparser.readKickstart(file)
     except (KickstartValueError, KickstartParseError) as e:
        if anaconda.intf:
-           anaconda.intf.kickstartErrorWindow(e.__str__())
+           status.announce_kickstart_error_sync(e.__str__())
            sys.exit(1)
        else:
             stderrLog.critical(_("The following error was found while parsing the kickstart "
@@ -1286,7 +1289,7 @@ def preScriptPass(anaconda, file):
             sys.exit(1)
     except KickstartError as e:
         if anaconda.intf:
-            anaconda.intf.kickstartErrorWindow("Could not open kickstart file or included file named %s" % file)
+            status.announce_kickstart_error_sync("Could not open kickstart file or included file named %s" % file)
             sys.exit(1)
         else:
             stderrLog.critical(_("The following error was found while parsing the kickstart "
@@ -1311,11 +1314,12 @@ def parseKickstart(anaconda, file):
     # Note we do NOT call dasd.startup() here, that does not online drives, but
     # only checks if they need formatting, which requires zerombr to be known
 
+    status = pyanaconda.view.Status()
     try:
         ksparser.readKickstart(file)
     except (KickstartValueError, KickstartParseError) as e:
         if anaconda.intf:
-            anaconda.intf.kickstartErrorWindow(e.__str__())
+            status.announce_kickstart_error_sync(e.__str__())
             sys.exit(1)
         else:
             stderrLog.critical(_("The following error was found while parsing the kickstart "
@@ -1325,7 +1329,7 @@ def parseKickstart(anaconda, file):
         # We may not have an intf now, but we can do better than just raising
         # the exception.
         if anaconda.intf:
-            anaconda.intf.kickstartErrorWindow("Could not open kickstart file or included file named %s" % file)
+            status.announce_kickstart_error_sync("Could not open kickstart file or included file named %s" % file)
             sys.exit(1)
         else:
             stderrLog.critical(_("The following error was found while parsing the kickstart "
@@ -1536,7 +1540,8 @@ def setSteps(anaconda):
                 errors.append(msg)
 
         if len(errors) > 0:
-            anaconda.intf.kickstartErrorWindow(_("The kickstart configuration "
+            status = pyanaconda.view.Status()
+            status.announce_kickstart_error_sync(_("The kickstart configuration "
                 "file is missing required information that anaconda cannot "
                 "prompt for.  Please add the following sections and try "
                 "again:\n%s") % ", ".join(errors))

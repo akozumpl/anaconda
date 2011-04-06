@@ -11,6 +11,7 @@ log = logging.getLogger("anaconda")
 # detailedMessageWindow
 
 INITIALIZE_DISK_WINDOW = 107
+KICKSTART_ERROR_WINDOW = 108
 MESSAGE_WINDOW = 101
 PASSPHRASE_WINDOW = 102
 PROGRESS_PULSE = 103
@@ -89,6 +90,13 @@ class Status(object):
         return handle
 
     # stack interface
+    def announce_kickstart_error_sync(self, text):
+        self.out_queue.put((KICKSTART_ERROR_WINDOW,
+                            None,
+                            self._to_dict(text=text)))
+        self._update_ui()
+        return self.in_queue.get()
+
     def display_step(self, step):
         # synchronous event
         self.out_queue.put((DISPLAY_STEP,
