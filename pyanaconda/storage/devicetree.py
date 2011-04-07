@@ -92,14 +92,14 @@ def getLUKSPassphrase(intf, device, passphrases):
     
     buttons = [_("Back"), _("Continue")]
     passphrase_incorrect = False
+    status = pyanaconda.view.Status()
     while True:
         if passphrase_incorrect:
             # TODO: add a flag to passphraseEntryWindow to say the last
             #       passphrase was incorrect so try again
             passphrase_incorrect = False
-        passphrase = intf.passphraseEntryWindow(device.name)
+        passphrase = status.need_passphrase_sync(device.name)
         if not passphrase:
-            status = pyanaconda.view.Status()
             rc = status.need_answer_sync(_("Confirm"),
                                     _("Are you sure you want to skip "
                                       "entering a passphrase for device "
