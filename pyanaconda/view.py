@@ -3,6 +3,7 @@ import logging
 log = logging.getLogger("anaconda")
 
 DETAILED_MESSAGE_WINDOW = 109
+EDIT_REPO_WINDOW = 111
 INITIALIZE_DISK_WINDOW = 107
 KICKSTART_ERROR_WINDOW = 108
 LUKS_WINDOW = 110
@@ -88,6 +89,13 @@ class Status(object):
         self.out_queue.put((KICKSTART_ERROR_WINDOW,
                             None,
                             self._to_dict(text=text)))
+        self._update_ui()
+        return self.in_queue.get()
+
+    def display_edit_repo_sync(self ,repo):
+        self.out_queue.put((EDIT_REPO_WINDOW,
+                            None,
+                            self._to_dict(repo=repo)))
         self._update_ui()
         return self.in_queue.get()
 

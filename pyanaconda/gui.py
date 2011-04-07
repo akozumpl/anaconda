@@ -919,6 +919,9 @@ class GuiView(pyanaconda.view.View):
         if kind == pyanaconda.view.DETAILED_MESSAGE_WINDOW:
             log.debug("GuiView: DETAILED_MESSAGE_WINDOW")
             out_queue.put(self.intf.detailedMessageWindow(**parameters))
+        if kind == pyanaconda.view.EDIT_REPO_WINDOW:
+            log.debug("GuiView: EDIT_REPO_WINDOW")
+            out_queue.put(self.intf.editRepoWindow(**parameters))
         elif kind == pyanaconda.view.INITIALIZE_DISK_WINDOW:
             log.debug("GuiView: INITIALIZE_DISK_WINDOW")
             out_queue.put(self.intf.questionInitializeDisk(**parameters))

@@ -1347,7 +1347,7 @@ reposdir=/etc/anaconda.repos.d,/tmp/updates/anaconda.repos.d,/tmp/product/anacon
                     sys.exit(0)
                 elif rc == 1:
                     # edit
-                    anaconda.intf.editRepoWindow(repo)
+                    status.display_edit_repo_sync(repo)
                     break
                 elif rc == 2:
                     # retry, but only if button is present
