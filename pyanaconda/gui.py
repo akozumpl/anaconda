@@ -943,6 +943,9 @@ class GuiView(pyanaconda.view.View):
         elif kind == pyanaconda.view.MESSAGE_WINDOW:
             log.debug("GuiView: MESSAGE_WINDOW")
             out_queue.put(self.intf.messageWindow(**parameters))
+        elif kind == pyanaconda.view.METHODSTR_WINDOW:
+            log.debug("GuiView: METHODSTR_WINDOW")
+            out_queue.put(self.intf.methodstrRepoWindow(**parameters))
         elif kind == pyanaconda.view.PASSPHRASE_WINDOW:
             log.debug("GuiView: PASSPHRASE_WINDOW")
             out_queue.put(self.intf.passphraseEntryWindow(**parameters))

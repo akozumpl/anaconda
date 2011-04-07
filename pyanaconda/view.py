@@ -8,6 +8,7 @@ INITIALIZE_DISK_WINDOW = 107
 KICKSTART_ERROR_WINDOW = 108
 LUKS_WINDOW = 110
 MESSAGE_WINDOW = 101
+METHODSTR_WINDOW = 112
 PASSPHRASE_WINDOW = 102
 PROGRESS_PULSE = 103
 PROGRESS_WINDOW = 104
@@ -143,6 +144,12 @@ class Status(object):
     def need_luks_passphrase_sync(self, passphrase = "", preexist = False):
         argdict = self._to_dict(passphrase=passphrase, preexist=preexist)
         self.out_queue.put((LUKS_WINDOW, None, argdict))
+        self._update_ui()
+        return self.in_queue.get()
+
+    def need_methodstr_sync(self, methodstr, exception):
+        argdict = self._to_dict(methodstr=methodstr, exception=exception)
+        self.out_queue.put((METHODSTR_WINDOW, None, argdict))
         self._update_ui()
         return self.in_queue.get()
 

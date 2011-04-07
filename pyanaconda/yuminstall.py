@@ -357,8 +357,9 @@ class AnacondaYum(yum.YumBase):
                 self.configBaseURL()
                 break
             except SystemError as exception:
-                self.anaconda.methodstr = self.anaconda.intf.methodstrRepoWindow(self.anaconda.methodstr or "cdrom:",
-                                                                                 exception)
+                status = pyanaconda.view.Status()
+                self.anaconda.methodstr = status.need_methodstr_sync(
+                    self.anaconda.methodstr or "cdrom:", exception)
 
         self.doConfigSetup(root=self.anaconda.rootPath)
         if not self.anaconda.bootloader.update_only:
