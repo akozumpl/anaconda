@@ -155,7 +155,8 @@ def storageComplete(anaconda):
     if (anaconda.storage.encryptedAutoPart or new_luks) and \
        not anaconda.storage.encryptionPassphrase:
         while True:
-            (passphrase, retrofit) = anaconda.intf.getLuksPassphrase(preexist=existing_luks)
+            (passphrase, retrofit) = status.need_luks_passphrase_sync(
+                preexist=existing_luks)
             if passphrase:
                 anaconda.storage.encryptionPassphrase = passphrase
                 anaconda.storage.encryptionRetrofit = retrofit
