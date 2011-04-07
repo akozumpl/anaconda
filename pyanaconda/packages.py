@@ -134,7 +134,8 @@ def turnOnFilesystems(anaconda):
         raise
 
     if title:
-        rc = anaconda.intf.detailedMessageWindow(title, message, details,
+        status = pyanaconda.view.Status()
+        rc = status.need_answer_long_sync(title, message, details,
                         type = "custom",
                         custom_buttons = [_("_File Bug"), _("_Exit installer")])
 

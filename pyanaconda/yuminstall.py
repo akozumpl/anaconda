@@ -1088,13 +1088,14 @@ class AnacondaYum(yum.YumBase):
             spaceprob = to_unicode(spaceprob)
             fileprob = to_unicode(fileprob)
 
+            status = pyanaconda.view.Status()
             if self.anaconda.upgrade or self.anaconda.ksdata:
-                intf.detailedMessageWindow(_("Error Running Transaction"),
+                status.need_answer_long_sync(_("Error Running Transaction"),
                    msg, spaceprob + "\n" + fileprob, type="custom",
                    custom_icon="error", custom_buttons=[_("_Exit installer")])
                 sys.exit(1)
             else:
-                rc = intf.detailedMessageWindow(_("Error Running Transaction"),
+                rc = status.need_answer_long_sync(_("Error Running Transaction"),
                         msg, spaceprob + "\n" + fileprob, type="custom",
                         custom_icon="error",
                         custom_buttons=[_("_Back"), _("_Exit installer")])
@@ -1511,7 +1512,7 @@ reposdir=/etc/anaconda.repos.d,/tmp/updates/anaconda.repos.d,/tmp/product/anacon
                     if not anaconda.ksdata:
                         custom_buttons.insert(1, _("_Back"))
 
-                    rc = anaconda.intf.detailedMessageWindow(_("Warning"),
+                    rc = status.need_answer_long_sync(_("Warning"),
                             _("Some of the packages you have selected for "
                               "install are missing dependencies.  You can "
                               "exit the installation, go back and change "

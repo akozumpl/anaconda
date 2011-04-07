@@ -114,19 +114,18 @@ class AnacondaKSScript(Script):
                     log.error("\t%s" % l)
 
             if self.errorOnFail:
-                if intf != None:
-                    msg = _("There was an error running the kickstart "
-                            "script at line %(lineno)s.  You may examine the "
-                            "output in %(msgs)s.  This is a fatal error and "
-                            "installation will be aborted.  Press the "
-                            "OK button to exit the installer.") \
-                          % {'lineno': self.lineno, 'msgs': messages}
+                msg = _("There was an error running the kickstart "
+                        "script at line %(lineno)s.  You may examine the "
+                        "output in %(msgs)s.  This is a fatal error and "
+                        "installation will be aborted.  Press the "
+                        "OK button to exit the installer.") \
+                      % {'lineno': self.lineno, 'msgs': messages}
 
-                    if err:
-                        intf.detailedMessageWindow(_("Scriptlet Failure"), msg, err)
-                    else:
-                        status = pyanaconda.view.Status()
-                        status.need_answer_sync(_("Scriptlet Failure"), msg)
+                status = pyanaconda.view.Status()
+                if err:
+                    status.need_answer_long_sync(_("Scriptlet Failure"), msg, err)
+                else:
+                    status.need_answer_sync(_("Scriptlet Failure"), msg)
 
                 sys.exit(0)
 

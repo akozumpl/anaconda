@@ -2,14 +2,7 @@ import Queue
 import logging
 log = logging.getLogger("anaconda")
 
-# Status must eventually provide:
-# waitWindow
-# messageWindow
-# progressWindow
-# passphraseEntryWindow
-# getLuksPassphrase
-# detailedMessageWindow
-
+DETAILED_MESSAGE_WINDOW = 109
 INITIALIZE_DISK_WINDOW = 107
 KICKSTART_ERROR_WINDOW = 108
 MESSAGE_WINDOW = 101
@@ -119,6 +112,16 @@ class Status(object):
                                 default=default, custom_buttons=custom_buttons,
                                 custom_icon=custom_icon)
         self.out_queue.put((MESSAGE_WINDOW, None, argdict))
+        self._update_ui()
+        return self.in_queue.get()
+
+    def need_answer_long_sync(self, title, text, longText=None, type="ok",
+                              default=None, custom_buttons=None, custom_icon=None):
+        argdict = self._to_dict(title=title, text=text, longText=longText,
+                                type=type, default=default,
+                                custom_buttons=custom_buttons,
+                                custom_icon=custom_icon)
+        self.out_queue.put((DETAILED_MESSAGE_WINDOW, None, argdict))
         self._update_ui()
         return self.in_queue.get()
 
