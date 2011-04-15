@@ -44,6 +44,13 @@ class InstallProgressWindow (InstallWindow):
         self._updateChange = 0.01
         self._showPercentage = False
 
+    def init_finished():
+        # this winodw does not really provide any interaction: it's a hack to
+        # set itself up as intf.instProgress so that AnacondaCallback can use
+        # it. So what needs to be done once the window is up and running is just
+        # trigger the next button so dispatcher is not stuck here.
+        self.intf.icw.nextClicked()
+
     def processEvents(self):
         gui.processEvents()
 
@@ -106,7 +113,6 @@ class InstallProgressWindow (InstallWindow):
             files = ["progress_first.png"]
 
         return files
-        
 
     def getScreen (self, anaconda):
 	self.intf = anaconda.intf
@@ -142,9 +148,23 @@ class InstallProgressWindow (InstallWindow):
         vbox.pack_start(self.infolabel)
 
 	# All done with creating components of UI
-	self.intf.setPackageProgressWindow(self)
+        view = InstallProgressView(self)
+	self.intf.progress_view = view
 	self.intf.setInstallProgressClass(self)
 
 	vbox.set_border_width(6)
 
 	return vbox
+
+class InstallProgressView:
+    def __init__(self, progress_window):
+        self.progress_window = progress_window
+
+    @gui.gui_thread
+    def _update_gui(self, status):
+        self.progress_window.set_text(status.text)
+        self.progress_window.set_label(status.label)
+        self.progress_window.set_fraction(fraction)
+
+    def update(self, status):
+        gui.idle_gtk(self._update_gui)

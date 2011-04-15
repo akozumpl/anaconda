@@ -93,6 +93,11 @@ def size_string (size):
     return to_unicode(retval)
 
 class AnacondaCallback:
+    class Status(object):
+        def __init__(self):
+            self.label = ""
+            self.text = ""
+            self.fraction = 0.0
 
     def __init__(self, ayum, anaconda, instLog, modeText):
         self.anaconda = anaconda
@@ -101,7 +106,8 @@ class AnacondaCallback:
         self.ayum = ayum
 
         self.messageWindow = pyanaconda.view.Status().need_answer_sync
-        self.progress = anaconda.intf.instProgress
+
+        self.pstatus = self.Status() # status of the main progress window
         self.progressWindowClass = anaconda.intf.progressWindow
         self.rootPath = anaconda.rootPath
 
@@ -124,6 +130,9 @@ class AnacondaCallback:
 
         self.donepkgs = 0
         self.doneSize = 0
+
+    def update_view(self):
+        self.progress_view = self.anaconda.intf.progress_view.update(self.pstatus)
 
     def callback(self, what, amount, total, h, user):
         if what == rpm.RPMCALLBACK_TRANS_START:
@@ -174,7 +183,9 @@ class AnacondaCallback:
 
             summary = to_unicode(gettext.ldgettext("redhat-dist", po.summary) or "")
             s += summary.strip()
-            self.progress.set_label(s)
+
+            self.pstatus.label = s
+            self.update_view()
 
             self.instLog.write(self.modeText % str(pkgStr))
 
@@ -214,21 +225,21 @@ class AnacondaCallback:
             self.doneSize += self.inProgressPo.returnSimple("installedsize") / 1024.0
 
             if self.donepkgs <= self.numpkgs:
-                self.progress.set_text(P_("Packages completed: "
-                                          "%(donepkgs)d of %(numpkgs)d",
-                                          "Packages completed: "
-                                          "%(donepkgs)d of %(numpkgs)d",
-                                          self.numpkgs)
-                                       % {'donepkgs': self.donepkgs,
-                                          'numpkgs': self.numpkgs})
-            self.progress.set_fraction(float(self.doneSize / self.totalSize))
-            self.progress.processEvents()
+                self.pstatus.text=P_("Packages completed: "
+                                    "%(donepkgs)d of %(numpkgs)d",
+                                    "Packages completed: "
+                                    "%(donepkgs)d of %(numpkgs)d",
+                                    self.numpkgs) % {'donepkgs': self.donepkgs,
+                                                     'numpkgs': self.numpkgs}
+            self.pstatus.fraction = float(self.doneSize / self.totalSize)
+            self.update_view()
 
             self.inProgressPo = None
 
         elif what == rpm.RPMCALLBACK_UNINST_START:
-            self.progress.set_text("")
-            self.progress.set_label(_("<b>Cleaning up %s</b>" % h))
+            self.pstatus.text = ""
+            self.pstatus.label = _("<b>Cleaning up %s</b>") % h
+            self.update_view()
 
         elif what in (rpm.RPMCALLBACK_CPIO_ERROR,
                       rpm.RPMCALLBACK_UNPACK_ERROR,

@@ -29,6 +29,7 @@ log = logging.getLogger("anaconda")
 
 class InstallInterfaceBase(object):
     def __init__(self):
+        self.progress_view = None
         self._warnedUnusedRaidMembers = []
         self._initLabelAnswers = {}
         self._inconsistentLVMAnswers = {}

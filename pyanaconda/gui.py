@@ -1426,6 +1426,7 @@ class InstallControlWindow:
         if self.reloadRcQueued:
             self.window.reset_rc_styles()
             self.reloadRcQueued = 0
+        new_screen.init_finished()
 
     def destroyCurrentWindow(self):
         children = self.installFrame.get_children ()
