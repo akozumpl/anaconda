@@ -90,7 +90,7 @@ stepToClass = {
 if iutil.isS390():
     stepToClass["bootloader"] = ("zipl_gui", "ZiplWindow")
 
-main_thread_id = threading.currentThread().ident
+main_thread_id = threading.current_thread().ident
 gui_thread_id = None
 
 def idle_gtk(func, *args, **kwargs):
@@ -106,7 +106,7 @@ def gui_thread(func):
         GTK is running.
     """
     def wrapper(*args, **kwargs):
-        assert threading.currentThread().ident == gui_thread_id,\
+        assert threading.current_thread().ident == gui_thread_id,\
             "the function %s must be called from the GUI thread" % func.__name__
         return func(*args, **kwargs)
     return wrapper
@@ -1565,7 +1565,7 @@ class InstallControlWindow:
 
     def run (self):
         global gui_thread_id
-        gui_thread_id = threading.currentThread().ident
+        gui_thread_id = threading.current_thread().ident
         log.debug("thread id where dispatch is running is: %d" % main_thread_id)
         log.debug("thread id where gtk.main() is running: %d" % gui_thread_id)
         assert gui_thread_id
