@@ -107,6 +107,7 @@ import parted
 import _ped
 import block
 
+import pyanaconda.view
 from errors import *
 from pyanaconda.iutil import notify_kernel, numeric_type
 from pyanaconda.flags import flags
@@ -479,6 +480,8 @@ class StorageDevice(Device):
 
         self._partedDevice = None
 
+        self.ui_status = pyanaconda.view.Status()
+
     @property
     def packages(self):
         """ List of packages required to manage devices of this type.
@@ -643,16 +646,10 @@ class StorageDevice(Device):
     # devicelibs functions, but all other devices display a wait window.
     #
     def _progressWindow(self, intf=None, title="", msg=""):
-        w = None
-        if intf:
-            w = intf.progressWindow(title, msg, 100, pulse=True)
-        return w
+        return self.ui_status.progress_window(title, msg, 100, pulse=True)
 
     def _waitWindow(self, intf=None, title="", msg=""):
-        w = None
-        if intf:
-            w = intf.waitWindow(title, msg)
-        return w
+        return self.ui_status.wait_window(title, msg)
 
     def _statusWindow(self, intf=None, title="", msg=""):
         return self._waitWindow(intf=intf, title=title, msg=msg)
@@ -764,8 +761,7 @@ class StorageDevice(Device):
         else:
             self._postCreate()
         finally:
-            if w:
-                w.pop()
+            self.ui_status.destroy_window(w)
 
     def _postCreate(self):
         """ Perform post-create operations. """
