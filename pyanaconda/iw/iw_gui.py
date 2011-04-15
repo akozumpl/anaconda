@@ -31,12 +31,6 @@ class InstallWindow:
 	if self.windowTitle:
 	    ics.setTitle (_(self.windowTitle))
 
-    def init_finished(self):
-        """ Called when initialization of this window is finished and the window
-            is about to be displayed.
-        """
-        pass
-
     def getNext (self):
 	return None
 

@@ -44,13 +44,6 @@ class InstallProgressWindow (InstallWindow):
         self._updateChange = 0.01
         self._showPercentage = False
 
-    def init_finished():
-        # this winodw does not really provide any interaction: it's a hack to
-        # set itself up as intf.instProgress so that AnacondaCallback can use
-        # it. So what needs to be done once the window is up and running is just
-        # trigger the next button so dispatcher is not stuck here.
-        self.intf.icw.nextClicked()
-
     def processEvents(self):
         gui.processEvents()
 
