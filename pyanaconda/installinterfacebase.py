@@ -188,7 +188,10 @@ class InstallInterfaceBase(object):
                  "these devices.", c) % c
         icon = "/usr/share/icons/gnome/32x32/status/dialog-error.png"
         buttons = [_("_Format"), _("_Ignore")]
-        return self.detailedMessageWindow(title, msg, devs.strip(),
+
+        import pyanaconda.view
+        status = pyanaconda.view.Status()
+        return status.need_answer_long_sync(title, msg, devs.strip(),
                                              type="custom",
                                              custom_icon=icon,
                                              custom_buttons=buttons,
