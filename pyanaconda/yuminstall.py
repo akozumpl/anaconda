@@ -105,15 +105,15 @@ class AnacondaCallback:
         self.ts = ayum.ts
         self.ayum = ayum
 
-        self.messageWindow = pyanaconda.view.Status().need_answer_sync
-
         self.pstatus = self.Status() # status of the main progress window
-        self.progressWindowClass = anaconda.intf.progressWindow
+        self.status = pyanaconda.view.Status() # status to talk to the general UI
+        self.messageWindow = self.status.need_answer_sync
+        self.progress_handle = None
+
         self.rootPath = anaconda.rootPath
 
         self.initWindow = None
 
-        self.progressWindow = None
         self.lastprogress = 0
         self.incr = 20
 
@@ -138,19 +138,19 @@ class AnacondaCallback:
         if what == rpm.RPMCALLBACK_TRANS_START:
             # step 6 is the bulk of the ts processing time
             if amount == 6:
-                self.progressWindow = \
-                    self.progressWindowClass (_("Preparing to install"),
+                self.progress_handle = \
+                    self.status.progress_window(_("Preparing to install"),
                                               _("Preparing transaction from installation source"),
                                               total)
                 self.incr = total / 10
 
         if what == rpm.RPMCALLBACK_TRANS_PROGRESS:
-            if self.progressWindow and amount > self.lastprogress + self.incr:
-                self.progressWindow.set(amount)
+            if self.progress_handle and amount > self.lastprogress + self.incr:
+                self.status.update_progress(self.progress_handle, amount)
                 self.lastprogress = amount
 
-        if what == rpm.RPMCALLBACK_TRANS_STOP and self.progressWindow:
-            self.progressWindow.pop()
+        if what == rpm.RPMCALLBACK_TRANS_STOP and self.progress_handle:
+            self.status.destroy_window(self.progress_handle)
 
         if what == rpm.RPMCALLBACK_INST_OPEN_FILE:
             # Old-style (hdr, path) callback
@@ -1895,9 +1895,10 @@ reposdir=/etc/anaconda.repos.d,/tmp/updates/anaconda.repos.d,/tmp/product/anacon
 
 class DownloadHeaderProgress:
     def __init__(self, intf, ayum=None):
-        window = intf.progressWindow(_("Installation Starting"),
-                                     _("Starting installation process"),
-                                     1.0, 0.01)
+        self.status = pyanaconda.view.Status()
+        window = self.status.progress_window(_("Installation Starting"),
+                                             _("Starting installation process"),
+                                             1.0, 0.01)
         self.window = window
         self.ayum = ayum
         self.current = self.loopstart = 0
@@ -1923,21 +1924,22 @@ class DownloadHeaderProgress:
             self.set(self.current + self.incr)
 
     def pop(self):
-        self.window.pop()
+        self.status.destroy_window(self.window)
 
     def refresh(self, *args):
-        self.window.refresh()
+        pass
 
     def set(self, value):
         self.current = value
-        self.window.set(self.current)
+        self.status.update_progress(self.window, self.current)
 
 class YumDepSolveProgress:
     def __init__(self, intf, ayum = None):
-        window = intf.progressWindow(_("Dependency Check"),
-                                     _("Checking dependencies in packages selected for installation"),
-                                     1.0, 0.01)
-        self.window = window
+        self.status = pyanaconda.view.Status()
+        self.window = self.status.progress_window(
+            _("Dependency Check"),
+            _("Checking dependencies in packages selected for installation"),
+            1.0, 0.01)
 
         self.numpkgs = None
         self.loopstart = None
@@ -1966,22 +1968,20 @@ class YumDepSolveProgress:
         pass
 
     def refresh(self, *args):
-        self.window.refresh()
+        pass
 
     def set(self, value):
         self.current = value
-        self.window.set(self.current)
+        self.status.update_progress(self.window, self.current)
 
     def start(self):
         self.set(0.0)
-        self.refresh()
 
     def end(self):
         self.window.set(1.0)
-        self.window.refresh()
 
     def pop(self):
-        self.window.pop()
+        self.status.destroy_window(self.window)
 
 # We don't have reasonable hook for sackSetup, and it
 # is fairly fast, so we use just waitWindow here
@@ -2011,20 +2011,21 @@ class RepoSetupPulseProgress:
             txt = _("Retrieving installation information.")
         else:
             txt = _("Retrieving installation information for %s.")%(repo.name)
-        self.window = self.intf.progressWindow(_("Installation Progress"),
-                                               txt,
-                                               1.0, pulse=True)
+        self.status = pyanaconda.view.Status()
+        self.window = self.status.progress_window(_("Installation Progress"),
+                                                  txt,
+                                                  1.0, pulse=True)
         repo.setCallback(self)
 
     def disconnect(self):
-        self.window.pop()
+        self.status.destroy_window(self.window)
         self.repo.setCallback(None)
 
     def refresh(self, *args):
-        self.window.refresh()
+        pass
 
     def set(self):
-        self.window.pulse()
+        self.status.progress_pulse(self.window)
 
     def start(self, filename, url, basename, size, text):
         log.debug("Grabbing  %s" % url)
@@ -2037,4 +2038,3 @@ class RepoSetupPulseProgress:
 
     def end(self, read):
         self.set()
-        self.window.refresh()
