@@ -42,12 +42,14 @@ import gobject
 from language import expandLangs
 from constants import *
 from product import *
-import threading
 import network
 from installinterfacebase import InstallInterfaceBase
 import imp
 import iw
 import pyanaconda.view
+
+import threading
+import Queue
 
 import gettext
 _ = lambda x: gettext.ldgettext("anaconda", x)
@@ -94,12 +96,25 @@ main_thread_id = threading.current_thread().ident
 gui_thread_id = None
 
 def idle_gtk(func, *args, **kwargs):
-    def return_false(func, *args, **kwargs):
+    def return_false(func, args, kwargs):
         # It is important the GDK lock is released upon exception.
         with gtk.gdk.lock:
+            # only expand the parameters now
             func(*args, **kwargs)
         return False
-    gobject.idle_add(return_false, func, *args, **kwargs)
+
+    # pass args as a list and kwargs as a dict, do not expand them because
+    # idle_add can not take keyword arguments
+    gobject.idle_add(return_false, func, args, kwargs)
+
+def idle_gtk_sync(func, *args, **kwargs):
+    def wrapper(func, queue, *args, **kwargs):
+        ret = func(*args, **kwargs)
+        queue.put(ret)
+
+    queue = Queue.Queue()
+    idle_gtk(wrapper, func, queue, *args, **kwargs)
+    return queue.get()
 
 def gui_thread(func):
     """ Decorator. On graphical install, assert that this is the thread where
