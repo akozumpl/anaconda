@@ -1020,9 +1020,9 @@ class InstallInterface(InstallInterfaceBase):
     def resume(self):
         pass
 
-
-    # just_setup is used for [Configure Network] button
-    def enableNetwork(self, just_setup=False):
+    @gui_thread
+    def _enableNetwork(self, just_setup=False):
+        # just_setup is used for [Configure Network] button
 
         if len(self.anaconda.network.netdevices) == 0:
             return False
@@ -1114,6 +1114,9 @@ class InstallInterface(InstallInterfaceBase):
         if networkEnabled:
             network.resetResolver()
         return networkEnabled
+
+    def enableNetwork(self, just_setup = False):
+        return idle_gtk_sync(self._enableNetwork, just_setup)
 
     def _handleDeviceActivationFail(self, devices):
         d = gtk.MessageDialog(None, 0, gtk.MESSAGE_ERROR,
