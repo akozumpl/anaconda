@@ -129,6 +129,7 @@ class YumPayload(PackagePayload):
         ksdata.method.
     """
     def __init__(self, data):
+        raise RuntimeError("can't let you do that Dave")
         if rpm is None or yum is None:
             raise PayloadError("unsupported payload type")
 
