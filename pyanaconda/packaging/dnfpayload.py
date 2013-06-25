@@ -20,16 +20,22 @@
 # Red Hat Author(s): Ales Kozumplik <akozumpl@redhat.com>
 #
 
-import pyanaconda.packaging as packaging
+from pyanaconda.packaging import PayloadError
+
 import pyanaconda.constants as constants
+import pyanaconda.packaging as packaging
+
+import logging
+log = logging.getLogger("packaging")
 
 try:
     import rpm
     import dnf
 except ImportError as e:
     log.error("dnfpayload: component import failed: %s" % e)
+    rpm = dnf=  None
 
-default_repos = [productName.lower(), "rawhide"]
+default_repos = [constants.productName.lower(), "rawhide"]
 
 class DNFPayload(packaging.PackagePayload):
     def _sync_metadata(self, dnf_repo):
@@ -40,12 +46,12 @@ class DNFPayload(packaging.PackagePayload):
         dnf_repo = self._base.repos.add_repo(repo.name, repo.baseurl)
         dnf_repo.enable()
         try:
-            dnf_repo.get_primary_xml():
+            dnf_repo.get_primary_xml()
         except dnf.RepoError as e:
             raise MetadataError(e.value)
 
     def __init__(self, data):
-        if rpm is None or yum is None:
+        if rpm is None or dnf is None:
             raise PayloadError("unsupported payload type")
 
         PackagePayload.__init__(self, data)
