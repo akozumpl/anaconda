@@ -20,12 +20,12 @@
 # Red Hat Author(s): Ales Kozumplik <akozumpl@redhat.com>
 #
 
-from pyanaconda.packaging import PayloadError
+from pyanaconda.flags import flags
 
+import logging
 import pyanaconda.constants as constants
 import pyanaconda.packaging as packaging
 
-import logging
 log = logging.getLogger("packaging")
 
 try:
@@ -35,12 +35,17 @@ except ImportError as e:
     log.error("dnfpayload: component import failed: %s" % e)
     rpm = dnf=  None
 
-default_repos = [constants.productName.lower(), "rawhide"]
+DEFAULT_REPOS = [constants.productName.lower(), "rawhide"]
+DNF_CACHE_DIR = '/tmp/dnf.cache'
 
 class DNFPayload(packaging.PackagePayload):
-    def _sync_metadata(self, dnf_repo):
-        dnf_repo.metadata.get_primary_xml()
-        dnf_repo.metadata.get_groups()
+    def __init__(self, data):
+        packaging.PackagePayload.__init__(self, data)
+        if rpm is None or dnf is None:
+            raise packaging.PayloadError("unsupported payload type")
+
+        self._base = None
+        self._configure()
 
     def _add_repo(self, repo):
         dnf_repo = self._base.repos.add_repo(repo.name, repo.baseurl)
@@ -50,27 +55,36 @@ class DNFPayload(packaging.PackagePayload):
         except dnf.RepoError as e:
             raise MetadataError(e.value)
 
-    def __init__(self, data):
-        if rpm is None or dnf is None:
-            raise PayloadError("unsupported payload type")
+    def _configure(self):
+        self._base = dnf.Base()
+        self._base.conf.persistdir = DNF_CACHE_DIR
+        self._base.cache_c.prefix = DNF_CACHE_DIR
+        self._base.cache_c.suffix = 'default'
 
-        PackagePayload.__init__(self, data)
-        self._base = dnf.YumBase()
+    def _sync_metadata(self, dnf_repo):
+        try:
+            dnf_repo.load()
+        except dnf.exceptions.RepoError as e:
+            raise MetadataError(str(e))
+
+    def reset(self, root=None):
+        # Called any time to reset the instance.
+        self._configure()
 
     def setup(self, storage):
+        # must end up with the base repo (and its metadata) ready
+        super(DNFPayload, self).setup(storage)
         self.updateBaseRepo()
         self.gatherRepoMetadata()
 
-    def reset(self, root=None):
-        self._base.drop_sack()
-
     def release(self):
-        self._base.drop_sack()
-        self._base.drop_repos()
+        pass
+        # self._base.drop_sack()
+        # self._base.drop_repos()
 
     @property
     def repos(self):
-        # repo ids that DNF can see by itself
+        # known repo ids
         return [r.id for r in self._base.repos.values()]
 
     @property
@@ -80,24 +94,28 @@ class DNFPayload(packaging.PackagePayload):
 
     @property
     def baseRepo(self):
-        repo_names = [constants.BASE_REPO_NAME] + default_repos
-        for repo_name in repo_names:
-            if repo_name in self.repos:
-                if self._base.repos[repo_name].enabled:
-                    return repo_name
-
+        repo_names = [constants.BASE_REPO_NAME] + DEFAULT_REPOS
+        for repo in self._base.repos.iter_enabled():
+            if repo.id in repo_names:
+                return repo.id
         return None
-
-    def updateBaseRepo(self, fallback=True, root=None, checkmount=True):
-        # tbd:
-        # 1) configuring the base repo based on self.data.method.method
-        # 2) disabling all unwanted repos
-        pass
 
     def gatherRepoMetadata(self):
         map(self._sync_metadata, self._base.repos.values())
 
+    def updateBaseRepo(self, fallback=True, root=None, checkmount=True):
+        method = self.data.method
+        assert(method.method == "url")
+
+        repo = self._base.build_repo(constants.BASE_REPO_NAME)
+        repo.baseurl = [method.url]
+        repo.mirrorlist = method.mirrorlist
+        repo.sslverify = not (method.noverifyssl or flags.noverifyssl)
+
+        self._base.repos.add(repo)
+
     def configureAddOnRepo(self, repo):
+        # responsible for raising NoNetworkError
         return self._add_repo(repo)
 
     def addRepo(self, repo):
@@ -117,7 +135,3 @@ class DNFPayload(packaging.PackagePayload):
     def install(self):
         self._base.build_transaction()
         self._base.do_transaction()
-
-    # tbd
-    # 1) groups manipulation
-    # 2) environments manipulation
