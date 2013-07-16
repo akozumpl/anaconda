@@ -100,8 +100,22 @@ class DNFPayload(packaging.PackagePayload):
                 return repo.id
         return None
 
+    @property
+    def environments(self):
+        environments = self._base.comps.environments_iter
+        return [e.id for e in environments]
+
+    def environmentDescription(self, environmentid):
+        env = self._base.comps.environment_by_pattern(environmentid)
+        if env is None:
+            print([e.id for e in self._base.comps.environments])
+            raise packaging.NoSuchGroup(environmentid)
+        return (env.ui_name, env.ui_description)
+
     def gatherRepoMetadata(self):
         map(self._sync_metadata, self._base.repos.values())
+        self._base.activate_sack()
+        self._base.read_comps()
 
     def updateBaseRepo(self, fallback=True, root=None, checkmount=True):
         method = self.data.method
