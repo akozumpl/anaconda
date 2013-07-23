@@ -3,10 +3,12 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+import functools
 import os
 import pylorax.executils
 import pylorax.imgutils
 import pylorax.sysutils
+import subprocess
 import sys
 
 IMAGE = os.path.abspath('./image.img')
@@ -30,6 +32,12 @@ def run_anaconda(program, args):
     print(line)
     return os.system(line) >> 8 # retval is os.wait() encoded
 
+def try_umount(mount_point):
+    try:
+        pylorax.imgutils.umount(mount_point, retrysleep=0)
+    except subprocess.CalledProcessError:
+        pass
+
 def main():
     remove_image()
 
@@ -44,7 +52,9 @@ def main():
         os.putenv('PYTHONPATH', pythonpath)
         retval = run_anaconda(ANACONDA_EXECUTABLE, args)
     finally:
-        pylorax.imgutils.umount(ROOT_PATH)
+        paths = ('sys', 'run', 'dev/pts', 'dev/shm', 'dev', 'proc', '')
+        full_paths = map(functools.partial(os.path.join, ROOT_PATH), paths)
+        map(try_umount, full_paths)
         if retval != 0:
             remove_image()
     print('Done.')
