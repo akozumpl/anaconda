@@ -86,6 +86,7 @@ class DNFPayload(packaging.PackagePayload):
 
     def _configure(self):
         self._base = dnf.Base()
+        self._base.conf.installroot = constants.ROOT_PATH
         self._base.conf.persistdir = DNF_CACHE_DIR
         self._base.cache_c.prefix = DNF_CACHE_DIR
         self._base.cache_c.suffix = 'default'
@@ -180,7 +181,7 @@ class DNFPayload(packaging.PackagePayload):
 
     def gatherRepoMetadata(self):
         map(self._sync_metadata, self._base.repos.values())
-        self._base.activate_sack()
+        self._base.activate_sack(load_system_repo=False)
         self._base.read_comps()
 
     def preInstall(self, packages=None, groups=None):
