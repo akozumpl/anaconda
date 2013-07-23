@@ -21,11 +21,14 @@
 #
 
 from pyanaconda.flags import flags
+from pyanaconda.progress import progressQ
 
 import logging
 import multiprocessing
 import pyanaconda.constants as constants
+import pyanaconda.errors as errors
 import pyanaconda.packaging as packaging
+import sys
 
 log = logging.getLogger("packaging")
 
@@ -49,6 +52,8 @@ class DNFPayload(packaging.PackagePayload):
             raise packaging.PayloadError("unsupported payload type")
 
         self._base = None
+        self._required_groups = []
+        self._required_pkgs = []
         self._configure()
 
     def _add_repo(self, repo):
@@ -59,6 +64,26 @@ class DNFPayload(packaging.PackagePayload):
         except dnf.RepoError as e:
             raise MetadataError(e.value)
 
+    def _apply_selections(self):
+        self._select_group('core')
+        for pkg_name in self.data.packages.packageList:
+            try:
+                self._install_package(pkg_name)
+            except packaging.NoSuchPackage as e:
+                self._miss(e)
+
+        for group in self.data.packages.groupList:
+            try:
+                default = group.include in (constants.GROUP_ALL,
+                                            constants.GROUP_DEFAULT)
+                optional = group.include == constants.GROUP_ALL
+                self._select_group(group.name, default=default, optional=optional)
+            except packaging.NoSuchGroup as e:
+                self._miss(e)
+
+        map(self._install_package, self._required_pkgs)
+        map(self._select_group, self._required_groups)
+
     def _configure(self):
         self._base = dnf.Base()
         self._base.conf.persistdir = DNF_CACHE_DIR
@@ -66,11 +91,47 @@ class DNFPayload(packaging.PackagePayload):
         self._base.cache_c.suffix = 'default'
         self._base.conf.releasever = self._getReleaseVersion(None)
 
+    def _install_package(self, pkg_name):
+        cnt = self._base.install(pkg_name)
+        if not cnt:
+            raise packaging.NoSuchPackage(pkg_name)
+
+    def _miss(self, exn):
+        if self.data.packages.handleMissing == constants.KS_MISSING_IGNORE:
+            return
+
+        if errors.errorHandler.cb(exn, str(exn)) == constants.ERROR_RAISE:
+            # The progress bar polls kind of slowly, thus installation could
+            # still continue for a bit before the quit message is processed.
+            # Doing a sys.exit also ensures the running thread quits before
+            # it can do anything else.
+            progressQ.send_quit(1)
+            sys.exit(1)
+
+    def _select_group(self, group_id, default=True, optional=False):
+        grp = self._base.comps.group_by_pattern(group_id)
+        if grp is None:
+            raise packaging.NoSuchGroup(group_id)
+        types = {'mandatory'}
+        if default:
+            types.add('default')
+        if optional:
+            types.add('optional')
+        self._base.select_group(grp, types)
+
     def _sync_metadata(self, dnf_repo):
         try:
             dnf_repo.load()
         except dnf.exceptions.RepoError as e:
             raise MetadataError(str(e))
+
+    def checkSoftwareSelection(self):
+        log.info("checking software selection")
+        self._apply_selections()
+        res = self._base.build_transaction()
+        assert res == 2
+        log.info("%d packages selected totalling %s" %
+                 (len(self._base.transaction), 0))
 
     def reset(self, root=None):
         # Called any time to reset the instance.
@@ -122,6 +183,11 @@ class DNFPayload(packaging.PackagePayload):
         self._base.activate_sack()
         self._base.read_comps()
 
+    def preInstall(self, packages=None, groups=None):
+        super(DNFPayload, self).preInstall()
+        self._required_pkgs = packages
+        self._required_groups = groups
+
     def updateBaseRepo(self, fallback=True, root=None, checkmount=True):
         method = self.data.method
         assert(method.method == "url")
@@ -156,7 +222,8 @@ class DNFPayload(packaging.PackagePayload):
         self._base.repos[repo_id].enable()
 
     def install(self):
-        self._base.build_transaction()
+        self.checkSoftwareSelection()
+
         process = multiprocessing.Process(target=do_transaction,
                                           args=(self._base,))
         process.start()
