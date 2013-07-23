@@ -23,6 +23,7 @@
 from pyanaconda.flags import flags
 
 import logging
+import multiprocessing
 import pyanaconda.constants as constants
 import pyanaconda.packaging as packaging
 
@@ -37,6 +38,9 @@ except ImportError as e:
 
 DEFAULT_REPOS = [constants.productName.lower(), "rawhide"]
 DNF_CACHE_DIR = '/tmp/dnf.cache'
+
+def do_transaction(base):
+    base.do_transaction()
 
 class DNFPayload(packaging.PackagePayload):
     def __init__(self, data):
@@ -60,6 +64,7 @@ class DNFPayload(packaging.PackagePayload):
         self._base.conf.persistdir = DNF_CACHE_DIR
         self._base.cache_c.prefix = DNF_CACHE_DIR
         self._base.cache_c.suffix = 'default'
+        self._base.conf.releasever = self._getReleaseVersion(None)
 
     def _sync_metadata(self, dnf_repo):
         try:
@@ -121,8 +126,10 @@ class DNFPayload(packaging.PackagePayload):
         method = self.data.method
         assert(method.method == "url")
 
+        url = method.url
+        self._base.conf.releasever = self._getReleaseVersion(url)
         repo = self._base.build_repo(constants.BASE_REPO_NAME)
-        repo.baseurl = [method.url]
+        repo.baseurl = [url]
         repo.mirrorlist = method.mirrorlist
         repo.sslverify = not (method.noverifyssl or flags.noverifyssl)
 
@@ -130,9 +137,11 @@ class DNFPayload(packaging.PackagePayload):
 
     def configureAddOnRepo(self, repo):
         # responsible for raising NoNetworkError
+        raise RuntimeError()
         return self._add_repo(repo)
 
     def addRepo(self, repo):
+        raise RuntimeError()
         super(DNFPayload, self).addRepo(repo)
         return self._add_repo(repo)
 
@@ -148,4 +157,8 @@ class DNFPayload(packaging.PackagePayload):
 
     def install(self):
         self._base.build_transaction()
-        self._base.do_transaction()
+        process = multiprocessing.Process(target=do_transaction,
+                                          args=(self._base,))
+        process.start()
+        # readout the progress here
+        process.join()
