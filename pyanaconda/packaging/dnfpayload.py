@@ -86,11 +86,15 @@ class DNFPayload(packaging.PackagePayload):
 
     def _configure(self):
         self._base = dnf.Base()
-        self._base.conf.installroot = constants.ROOT_PATH
-        self._base.conf.persistdir = DNF_CACHE_DIR
+        conf = self._base.conf
+        conf.persistdir = DNF_CACHE_DIR
         self._base.cache_c.prefix = DNF_CACHE_DIR
         self._base.cache_c.suffix = 'default'
-        self._base.conf.releasever = self._getReleaseVersion(None)
+        conf.logdir = '/tmp/payload-logs'
+        self._base.logging.setup_from_dnf_conf(conf)
+
+        conf.installroot = constants.ROOT_PATH
+        conf.releasever = self._getReleaseVersion(None)
 
     def _install_package(self, pkg_name):
         cnt = self._base.install(pkg_name)
