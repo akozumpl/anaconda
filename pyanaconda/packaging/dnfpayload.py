@@ -21,6 +21,7 @@
 #
 
 from pyanaconda.flags import flags
+from pyanaconda.i18n import _
 from pyanaconda.progress import progressQ
 
 import logging
@@ -157,7 +158,7 @@ class DNFPayload(packaging.PackagePayload):
         log.info("checking software selection")
         self._apply_selections()
         res = self._base.build_transaction()
-        assert res == 2
+        assert res[0] == 2
         log.info("%d packages selected totalling %s" %
                  (len(self._base.transaction), 0))
 
@@ -180,7 +181,12 @@ class DNFPayload(packaging.PackagePayload):
         self._base.read_comps()
 
     def install(self):
+        progressQ.send_message(_('Starting package installation process'))
         self.checkSoftwareSelection()
+        pkgs_to_download = self._base.transaction.install_set
+        log.info('Downloading pacakges.')
+        self._base.download_packages(pkgs_to_download)
+        log.info('Downloading packages finished.')
 
         process = multiprocessing.Process(target=do_transaction,
                                           args=(self._base,))
