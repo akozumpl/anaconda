@@ -130,34 +130,6 @@ class DNFPayload(packaging.PackagePayload):
         except dnf.exceptions.RepoError as e:
             raise MetadataError(str(e))
 
-    def checkSoftwareSelection(self):
-        log.info("checking software selection")
-        self._apply_selections()
-        res = self._base.build_transaction()
-        assert res == 2
-        log.info("%d packages selected totalling %s" %
-                 (len(self._base.transaction), 0))
-
-    def reset(self, root=None):
-        # Called any time to reset the instance.
-        self._configure()
-
-    def setup(self, storage):
-        # must end up with the base repo (and its metadata) ready
-        super(DNFPayload, self).setup(storage)
-        self.updateBaseRepo()
-        self.gatherRepoMetadata()
-
-    def release(self):
-        pass
-        # self._base.drop_sack()
-        # self._base.drop_repos()
-
-    @property
-    def repos(self):
-        # known repo ids
-        return [r.id for r in self._base.repos.values()]
-
     @property
     def addOns(self):
         # addon repos via kickstart
@@ -176,6 +148,25 @@ class DNFPayload(packaging.PackagePayload):
         environments = self._base.comps.environments_iter
         return [e.id for e in environments]
 
+    @property
+    def repos(self):
+        # known repo ids
+        return [r.id for r in self._base.repos.values()]
+
+    def checkSoftwareSelection(self):
+        log.info("checking software selection")
+        self._apply_selections()
+        res = self._base.build_transaction()
+        assert res == 2
+        log.info("%d packages selected totalling %s" %
+                 (len(self._base.transaction), 0))
+
+    def disableRepo(self, repo_id):
+        self._base.repos[repo_id].disable()
+
+    def enableRepo(self, repo_id):
+        self._base.repos[repo_id].enable()
+
     def environmentDescription(self, environmentid):
         env = self._base.comps.environment_by_pattern(environmentid)
         if env is None:
@@ -188,10 +179,28 @@ class DNFPayload(packaging.PackagePayload):
         self._base.activate_sack(load_system_repo=False)
         self._base.read_comps()
 
+    def install(self):
+        self.checkSoftwareSelection()
+
+        process = multiprocessing.Process(target=do_transaction,
+                                          args=(self._base,))
+        process.start()
+        # readout the progress here
+        process.join()
+
     def preInstall(self, packages=None, groups=None):
         super(DNFPayload, self).preInstall()
         self._required_pkgs = packages
         self._required_groups = groups
+
+    def release(self):
+        pass
+
+    def setup(self, storage):
+        # must end up with the base repo (and its metadata) ready
+        super(DNFPayload, self).setup(storage)
+        self.updateBaseRepo()
+        self.gatherRepoMetadata()
 
     def updateBaseRepo(self, fallback=True, root=None, checkmount=True):
         method = self.data.method
@@ -205,32 +214,3 @@ class DNFPayload(packaging.PackagePayload):
         repo.sslverify = not (method.noverifyssl or flags.noverifyssl)
 
         self._base.repos.add(repo)
-
-    def configureAddOnRepo(self, repo):
-        # responsible for raising NoNetworkError
-        raise RuntimeError()
-        return self._add_repo(repo)
-
-    def addRepo(self, repo):
-        raise RuntimeError()
-        super(DNFPayload, self).addRepo(repo)
-        return self._add_repo(repo)
-
-    def removeRepo(self, repo_id):
-        super(DNFPayload, self).removeRepo(repo_id)
-        self._base.repos.remove(repo_id)
-
-    def disableRepo(self, repo_id):
-        self._base.repos[repo_id].disable()
-
-    def enableRepo(self, repo_id):
-        self._base.repos[repo_id].enable()
-
-    def install(self):
-        self.checkSoftwareSelection()
-
-        process = multiprocessing.Process(target=do_transaction,
-                                          args=(self._base,))
-        process.start()
-        # readout the progress here
-        process.join()
