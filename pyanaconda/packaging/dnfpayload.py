@@ -20,12 +20,14 @@
 # Red Hat Author(s): Ales Kozumplik <akozumpl@redhat.com>
 #
 
+from blivet.size import Size
 from pyanaconda.flags import flags
 from pyanaconda.i18n import _
 from pyanaconda.progress import progressQ
 
 import logging
 import multiprocessing
+import operator
 import pyanaconda.constants as constants
 import pyanaconda.errors as errors
 import pyanaconda.packaging as packaging
@@ -169,7 +171,7 @@ class DNFPayload(packaging.PackagePayload):
         res = self._base.build_transaction()
         assert res[0] == 2
         log.info("%d packages selected totalling %s" %
-                 (len(self._base.transaction), 0))
+                 (len(self._base.transaction), self.spaceRequired))
 
     def disableRepo(self, repo_id):
         self._base.repos[repo_id].disable()
@@ -219,6 +221,16 @@ class DNFPayload(packaging.PackagePayload):
         super(DNFPayload, self).setup(storage)
         self.updateBaseRepo()
         self.gatherRepoMetadata()
+
+    @property
+    def spaceRequired(self):
+        installed_sizes = [tsi.installed.installsize \
+                               for tsi in self._base.transaction]
+        size = reduce(operator.add, installed_sizes)
+        # add 35% to account for the fact that the above method is laughably
+        # inaccurate:
+        size *= 1.35
+        return Size(size)
 
     def updateBaseRepo(self, fallback=True, root=None, checkmount=True):
         method = self.data.method
