@@ -85,6 +85,11 @@ class DNFPayload(packaging.PackagePayload):
         map(self._install_package, self._required_pkgs)
         map(self._select_group, self._required_groups)
 
+    def _bump_tx_id(self):
+        cur = self.txID
+        self.txID = 1 if cur is None else cur + 1
+        return self.txID
+
     def _configure(self):
         self._base = dnf.Base()
         conf = self._base.conf
@@ -156,6 +161,7 @@ class DNFPayload(packaging.PackagePayload):
 
     def checkSoftwareSelection(self):
         log.info("checking software selection")
+        self._bump_tx_id()
         self._apply_selections()
         res = self._base.build_transaction()
         assert res[0] == 2
@@ -201,6 +207,9 @@ class DNFPayload(packaging.PackagePayload):
 
     def release(self):
         pass
+
+    def reset(self):
+        self.txID = None
 
     def setup(self, storage):
         # must end up with the base repo (and its metadata) ready
