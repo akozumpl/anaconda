@@ -17,9 +17,6 @@ ROOT_PATH = '/mnt/sysimage/'
 SIZE_GB = 8 * 1024 ** 3
 ANACONDA_CHECKOUT = '/home/akozumpl/repos/anaconda/a.f'
 ANACONDA_EXECUTABLE = os.path.join(ANACONDA_CHECKOUT, 'anaconda')
-DNF_CHECKOUT = '/home/akozumpl/dnf'
-LIBCOMPS_BUILD = '/home/akozumpl/repos/libcomps/libcomps/build/src/python/python2'
-HAWKEY_CHECKOUT = '/' # here
 
 def remove_image():
     try:
@@ -48,8 +45,7 @@ def main():
     args = ['--dnf', '--kickstart', KS, '--cmdline', '--dirinstall']
     retval = None
     try:
-        pythonpath = ':'.join((ANACONDA_CHECKOUT, DNF_CHECKOUT, LIBCOMPS_BUILD))
-        os.putenv('PYTHONPATH', pythonpath)
+        os.putenv('PYTHONPATH', os.getenv('SUDO_PYTHONPATH'))
         retval = run_anaconda(ANACONDA_EXECUTABLE, args)
     finally:
         paths = ('sys', 'run', 'dev/pts', 'dev/shm', 'dev', 'proc', '')
