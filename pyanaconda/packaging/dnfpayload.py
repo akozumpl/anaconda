@@ -36,17 +36,18 @@ import sys
 log = logging.getLogger("packaging")
 
 try:
-    import rpm
     import dnf
+    import dnf.output
+    import rpm
 except ImportError as e:
     log.error("dnfpayload: component import failed: %s" % e)
-    rpm = dnf=  None
+    dnf = rpm = None
 
 DEFAULT_REPOS = [constants.productName.lower(), "rawhide"]
 DNF_CACHE_DIR = '/tmp/dnf.cache'
 
 def do_transaction(base):
-    base.do_transaction()
+    base.do_transaction(display=dnf.output.RPMTransactionLoggingCallback)
 
 class DNFPayload(packaging.PackagePayload):
     def __init__(self, data):
