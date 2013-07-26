@@ -4,10 +4,12 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 import functools
+import glob
 import os
 import pylorax.executils
 import pylorax.imgutils
 import pylorax.sysutils
+import shutil
 import subprocess
 import sys
 
@@ -17,6 +19,11 @@ ROOT_PATH = '/mnt/sysimage/'
 SIZE_GB = 8 * 1024 ** 3
 ANACONDA_CHECKOUT = '/home/akozumpl/repos/anaconda/a.f'
 ANACONDA_EXECUTABLE = os.path.join(ANACONDA_CHECKOUT, 'anaconda')
+
+def cleanup_logs():
+    shutil.rmtree('/tmp/payload-logs')
+    for log in glob.glob('/tmp/*.log'):
+        os.remove(log)
 
 def remove_image():
     try:
@@ -44,8 +51,9 @@ def main():
     pylorax.imgutils.mount(IMAGE, opts='loop', mnt=ROOT_PATH)
     args = ['--dnf', '--kickstart', KS, '--cmdline', '--dirinstall']
     retval = None
+    cleanup_logs()
+    os.putenv('PYTHONPATH', os.getenv('SUDO_PYTHONPATH'))
     try:
-        os.putenv('PYTHONPATH', os.getenv('SUDO_PYTHONPATH'))
         retval = run_anaconda(ANACONDA_EXECUTABLE, args)
     finally:
         paths = ('sys', 'run', 'dev/pts', 'dev/shm', 'dev', 'proc', '')
