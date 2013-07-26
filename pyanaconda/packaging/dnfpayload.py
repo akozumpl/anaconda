@@ -97,6 +97,9 @@ class DNFPayload(packaging.PackagePayload):
         self._base.cache_c.prefix = DNF_CACHE_DIR
         self._base.cache_c.suffix = 'default'
         conf.logdir = '/tmp/payload-logs'
+        # disable console output completely:
+        conf.debuglevel = 0
+        conf.errorlevel = 0
         self._base.logging.setup_from_dnf_conf(conf)
 
         conf.installroot = constants.ROOT_PATH
