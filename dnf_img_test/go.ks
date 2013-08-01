@@ -3,7 +3,7 @@ sshpw --username=root --plaintext randOmStrinGhERE
 # Firewall configuration
 firewall --enabled --service=mdns
 # Use network installation
-url --url="http://dl.fedoraproject.org/pub/fedora/linux/development/19/x86_64/os/"
+url --url="http://dl.fedoraproject.org/pub/fedora/linux/releases/19/Fedora/x86_64/os/"
 
 # X Window System configuration information
 xconfig  --startxonboot
