@@ -66,7 +66,7 @@ class DNFPayload(packaging.PackagePayload):
         try:
             dnf_repo.get_primary_xml()
         except dnf.RepoError as e:
-            raise MetadataError(e.value)
+            raise packaging.MetadataError(e.value)
 
     def _apply_selections(self):
         self._select_group('core')
@@ -140,7 +140,7 @@ class DNFPayload(packaging.PackagePayload):
         try:
             dnf_repo.load()
         except dnf.exceptions.RepoError as e:
-            raise MetadataError(str(e))
+            raise packaging.MetadataError(str(e))
 
     @property
     def addOns(self):
