@@ -20,10 +20,16 @@ SIZE_GB = 8 * 1024 ** 3
 ANACONDA_CHECKOUT = '/home/akozumpl/repos/anaconda/a.f'
 ANACONDA_EXECUTABLE = os.path.join(ANACONDA_CHECKOUT, 'anaconda')
 
+def ignore_oserror(fn, *args, **kwargs):
+    try:
+        return fn(*args, **kwargs)
+    except OSError:
+        pass
+
 def cleanup_logs():
-    shutil.rmtree('/tmp/payload-logs')
+    ignore_oserror(shutil.rmtree, '/tmp/payload-logs')
     for log in glob.glob('/tmp/*.log'):
-        os.remove(log)
+        ignore_oserror(os.remove, log)
 
 def remove_image():
     try:
