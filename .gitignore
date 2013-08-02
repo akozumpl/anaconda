@@ -67,3 +67,6 @@ widgets/doc/html
 widgets/doc/xml
 widgets/gtk-doc.make
 widgets/src/gettext.h
+.emacs.*
+TAGS
+dnf_img_test/image.img
