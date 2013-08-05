@@ -46,7 +46,7 @@ except ImportError as e:
 DEFAULT_REPOS = [constants.productName.lower(), "rawhide"]
 DNF_CACHE_DIR = '/tmp/dnf.cache'
 
-class PayloadRPMDisplay(dnf.output.RPMTransactionLoggingCallback):
+class PayloadRPMDisplay(dnf.output.LoggingTransactionDisplay):
     def __init__(self, queue):
         super(PayloadRPMDisplay, self).__init__()
         self._queue = queue
@@ -54,7 +54,7 @@ class PayloadRPMDisplay(dnf.output.RPMTransactionLoggingCallback):
         self.cnt = 0
 
     def event(self, package, action, te_current, te_total, ts_current, ts_total):
-        if action == dnf.transaction.INSTALL and te_current == 0:
+        if action == self.PKG_INSTALL and te_current == 0:
             # do not report same package twice
             if self._last_ts == ts_current:
                 return
