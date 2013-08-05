@@ -46,8 +46,29 @@ except ImportError as e:
 DEFAULT_REPOS = [constants.productName.lower(), "rawhide"]
 DNF_CACHE_DIR = '/tmp/dnf.cache'
 
-def do_transaction(base):
-    base.do_transaction(display=dnf.output.RPMTransactionLoggingCallback)
+class PayloadRPMDisplay(dnf.output.RPMTransactionLoggingCallback):
+    def __init__(self, queue):
+        super(PayloadRPMDisplay, self).__init__()
+        self._queue = queue
+        self._last_ts = None
+        self.cnt = 0
+
+    def event(self, package, action, te_current, te_total, ts_current, ts_total):
+        if action == dnf.transaction.INSTALL and te_current == 0:
+            # do not report same package twice
+            if self._last_ts == ts_current:
+                return
+            self._last_ts = ts_current
+
+            msg = '%s.%s (%d/%d)' % \
+                (package.name, package.arch, ts_current, ts_total)
+            self.cnt += 1
+            self._queue.put(('install', msg))
+
+def do_transaction(base, queue):
+    display = PayloadRPMDisplay(queue)
+    base.do_transaction(display=display)
+    queue.put(('post', None))
 
 class DNFPayload(packaging.PackagePayload):
     def __init__(self, data):
@@ -200,10 +221,19 @@ class DNFPayload(packaging.PackagePayload):
         self._base.download_packages(pkgs_to_download)
         log.info('Downloading packages finished.')
 
+        pre_msg = _("Preparing transaction from installation source")
+        progressQ.send_message(pre_msg)
+
+        queue = multiprocessing.Queue()
         process = multiprocessing.Process(target=do_transaction,
-                                          args=(self._base,))
+                                          args=(self._base,queue))
         process.start()
-        # readout the progress here
+        (token, msg) = queue.get()
+        while token != 'post':
+            if token == 'install':
+                msg = _("Installing %s") % msg
+                progressQ.send_message(msg)
+            (token, msg) = queue.get()
         process.join()
 
     def preInstall(self, packages=None, groups=None):
