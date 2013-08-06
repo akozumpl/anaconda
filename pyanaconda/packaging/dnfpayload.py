@@ -82,13 +82,15 @@ class DNFPayload(packaging.PackagePayload):
         self._required_pkgs = []
         self._configure()
 
-    def _add_repo(self, repo):
-        dnf_repo = self._base.repos.add_repo(repo.name, repo.baseurl)
-        dnf_repo.enable()
-        try:
-            dnf_repo.get_primary_xml()
-        except dnf.RepoError as e:
-            raise packaging.MetadataError(e.value)
+    def _add_repo(self, ksrepo):
+        repo = self._base.build_repo(ksrepo.name)
+        url = ksrepo.baseurl
+        if url:
+            repo.baseurl = [url]
+        repo.mirrorlist = ksrepo.mirrorlist
+        repo.sslverify = not (ksrepo.noverifyssl or flags.noverifyssl)
+        repo.enable()
+        self._base.repos.add(repo)
 
     def _apply_selections(self):
         self._select_group('core')
@@ -273,9 +275,12 @@ class DNFPayload(packaging.PackagePayload):
 
         url = method.url
         self._base.conf.releasever = self._getReleaseVersion(url)
-        repo = self._base.build_repo(constants.BASE_REPO_NAME)
-        repo.baseurl = [url]
-        repo.mirrorlist = method.mirrorlist
-        repo.sslverify = not (method.noverifyssl or flags.noverifyssl)
 
-        self._base.repos.add(repo)
+        base_ksrepo = self.data.RepoData(name=constants.BASE_REPO_NAME,
+                                         baseurl=url,
+                                         mirrorlist=method.mirrorlist,
+                                         noverifyssl=method.noverifyssl)
+        self._add_repo(base_ksrepo)
+
+        for ksrepo in self.data.repo.dataList():
+            self._add_repo(ksrepo)
