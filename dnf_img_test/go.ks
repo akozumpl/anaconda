@@ -41,5 +41,6 @@ part swap --size=1000
 
 %packages
 #@core
+@anaconda-tools
 tour
 %end
