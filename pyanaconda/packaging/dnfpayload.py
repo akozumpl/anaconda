@@ -64,11 +64,12 @@ class PayloadRPMDisplay(dnf.output.LoggingTransactionDisplay):
                 (package.name, package.arch, ts_current, ts_total)
             self.cnt += 1
             self._queue.put(('install', msg))
+        elif action == self.TRANS_POST:
+            self._queue.put(('post', None))
 
 def do_transaction(base, queue):
     display = PayloadRPMDisplay(queue)
     base.do_transaction(display=display)
-    queue.put(('post', None))
 
 class DNFPayload(packaging.PackagePayload):
     def __init__(self, data):
@@ -234,6 +235,9 @@ class DNFPayload(packaging.PackagePayload):
                 msg = _("Installing %s") % msg
                 progressQ.send_message(msg)
             (token, msg) = queue.get()
+
+        post_msg = _("Performing post-installation setup tasks")
+        progressQ.send_message(post_msg)
         process.join()
 
     def preInstall(self, packages=None, groups=None):
