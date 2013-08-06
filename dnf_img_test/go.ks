@@ -4,6 +4,7 @@ sshpw --username=root --plaintext randOmStrinGhERE
 firewall --enabled --service=mdns
 # Use network installation
 url --url="http://dl.fedoraproject.org/pub/fedora/linux/releases/19/Fedora/x86_64/os/"
+repo --name=hawkey --baseurl=file:///home/akozumpl/hawkey/tests/repos/yum/
 
 # X Window System configuration information
 xconfig  --startxonboot
@@ -40,5 +41,5 @@ part swap --size=1000
 
 %packages
 #@core
-python
+tour
 %end
