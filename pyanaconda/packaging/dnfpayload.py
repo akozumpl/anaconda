@@ -186,6 +186,10 @@ class DNFPayload(packaging.PackagePayload):
         return [e.id for e in environments]
 
     @property
+    def mirrorEnabled(self):
+        return False
+
+    @property
     def repos(self):
         # known repo ids
         return [r.id for r in self._base.repos.values()]
@@ -211,9 +215,11 @@ class DNFPayload(packaging.PackagePayload):
 
     def disableRepo(self, repo_id):
         self._base.repos[repo_id].disable()
+        super(DNFPayload, self).disableRepo(repo_id)
 
     def enableRepo(self, repo_id):
         self._base.repos[repo_id].enable()
+        super(DNFPayload, self).enableRepo(repo_id)
 
     def environmentDescription(self, environmentid):
         env = self._base.comps.environment_by_pattern(environmentid)
@@ -258,6 +264,12 @@ class DNFPayload(packaging.PackagePayload):
         post_msg = _("Performing post-installation setup tasks")
         progressQ.send_message(post_msg)
         process.join()
+
+    def isRepoEnabled(self, repo_id):
+        try:
+            return self._base.repos[repo_id].enabled
+        except Exception:
+            return super(YumPayload, self).isRepoEnabled(repo_id)
 
     def preInstall(self, packages=None, groups=None):
         super(DNFPayload, self).preInstall()
