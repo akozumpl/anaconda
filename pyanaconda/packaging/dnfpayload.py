@@ -37,6 +37,7 @@ log = logging.getLogger("packaging")
 
 try:
     import dnf
+    import dnf.exceptions
     import dnf.output
     import rpm
 except ImportError as e:
@@ -193,8 +194,18 @@ class DNFPayload(packaging.PackagePayload):
         log.info("checking software selection")
         self._bump_tx_id()
         self._apply_selections()
-        res = self._base.build_transaction()
-        assert res[0] == 2
+
+        log.info("checking dependencies")
+        try:
+            if self._base.build_transaction():
+                log.debug("success")
+            else:
+                log.debug("empty transaction")
+        except dnf.exceptions.DepsolveError as e:
+            msg = str(e)
+            log.warning(msg)
+            raise errors.DependencyError([msg])
+
         log.info("%d packages selected totalling %s" %
                  (len(self._base.transaction), self.spaceRequired))
 
@@ -218,7 +229,13 @@ class DNFPayload(packaging.PackagePayload):
 
     def install(self):
         progressQ.send_message(_('Starting package installation process'))
-        self.checkSoftwareSelection()
+        try:
+            self.checkSoftwareSelection()
+        except errors.DependencyError:
+            if errors.errorHandler.cb(e) == constants.ERROR_RAISE:
+                progressQ.send_quit(1)
+                sys.exit(1)
+
         pkgs_to_download = self._base.transaction.install_set
         log.info('Downloading pacakges.')
         self._base.download_packages(pkgs_to_download)
