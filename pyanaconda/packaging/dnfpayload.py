@@ -235,6 +235,8 @@ class DNFPayload(packaging.PackagePayload):
 
     def install(self):
         progressQ.send_message(_('Starting package installation process'))
+        if self.install_device:
+            self._setupMedia(self.install_device)
         try:
             self.checkSoftwareSelection()
         except errors.DependencyError:
@@ -299,16 +301,15 @@ class DNFPayload(packaging.PackagePayload):
         return Size(size)
 
     def updateBaseRepo(self, fallback=True, root=None, checkmount=True):
+        log.info("configuring base repo")
+        url, mirrorlist, sslverify = self._setupInstallDevice(self.storage,
+                                                              checkmount)
         method = self.data.method
-        assert(method.method == "url")
-
-        url = method.url
         self._base.conf.releasever = self._getReleaseVersion(url)
 
         base_ksrepo = self.data.RepoData(name=constants.BASE_REPO_NAME,
-                                         baseurl=url,
-                                         mirrorlist=method.mirrorlist,
-                                         noverifyssl=method.noverifyssl)
+                                         baseurl=url, mirrorlist=mirrorlist,
+                                         noverifyssl=not sslverify)
         self._add_repo(base_ksrepo)
 
         for ksrepo in self.data.repo.dataList():
