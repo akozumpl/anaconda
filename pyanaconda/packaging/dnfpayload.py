@@ -46,6 +46,10 @@ except ImportError as e:
 
 DEFAULT_REPOS = [constants.productName.lower(), "rawhide"]
 DNF_CACHE_DIR = '/tmp/dnf.cache'
+REPO_DIRS = ['/etc/yum.repos.d',
+             '/etc/anaconda.repos.d',
+             '/tmp/updates/anaconda.repos.d',
+             '/tmp/product/anaconda.repos.d']
 
 class PayloadRPMDisplay(dnf.output.LoggingTransactionDisplay):
     def __init__(self, queue):
@@ -132,6 +136,11 @@ class DNFPayload(packaging.PackagePayload):
 
         conf.installroot = constants.ROOT_PATH
         conf.releasever = self._getReleaseVersion(None)
+
+        conf.reposdir = REPO_DIRS
+        log.info('Loading repositories config on the filesystem.')
+        self._base.read_all_repos()
+        log.info('Done: Loading repositories config on the filesystem.')
 
     def _install_package(self, pkg_name):
         cnt = self._base.install(pkg_name)
