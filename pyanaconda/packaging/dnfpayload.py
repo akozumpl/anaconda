@@ -302,6 +302,9 @@ class DNFPayload(packaging.PackagePayload):
 
     @property
     def spaceRequired(self):
+        if self._base.transaction is None:
+            return Size(spec="3000 MB")
+
         installed_sizes = [tsi.installed.installsize \
                                for tsi in self._base.transaction]
         size = reduce(operator.add, installed_sizes)
