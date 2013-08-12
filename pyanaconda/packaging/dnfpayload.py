@@ -223,6 +223,7 @@ class DNFPayload(packaging.PackagePayload):
                  (len(self._base.transaction), self.spaceRequired))
 
     def disableRepo(self, repo_id):
+        log.info("Disabling '%s'", repo_id)
         self._base.repos[repo_id].disable()
         super(DNFPayload, self).disableRepo(repo_id)
 
@@ -238,7 +239,7 @@ class DNFPayload(packaging.PackagePayload):
         return (env.ui_name, env.ui_description)
 
     def gatherRepoMetadata(self):
-        map(self._sync_metadata, self._base.repos.values())
+        map(self._sync_metadata, self._base.repos.iter_enabled())
         self._base.activate_sack(load_system_repo=False)
         self._base.read_comps()
 
@@ -327,3 +328,14 @@ class DNFPayload(packaging.PackagePayload):
 
         for ksrepo in self.data.repo.dataList():
             self._add_repo(ksrepo)
+
+        ksnames = [r.name for r in self.data.repo.dataList()]
+        ksnames.append(constants.BASE_REPO_NAME)
+        for repo in self._base.repos.iter_enabled():
+            id_ = repo.id
+            if 'source' in id_ or 'debuginfo' in id_:
+                self.disableRepo(id_)
+            elif constants.isFinal and 'rawhide' in id_:
+                self.disableRepo(id_)
+            elif method.method and id_ not in ksnames:
+                self.disableRepo(id_)
