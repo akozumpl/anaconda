@@ -303,15 +303,15 @@ class DNFPayload(packaging.PackagePayload):
 
     def updateBaseRepo(self, fallback=True, root=None, checkmount=True):
         log.info("configuring base repo")
-        url, mirrorlist, sslverify = self._setupInstallDevice(self.storage,
-                                                              checkmount)
         method = self.data.method
-        self._base.conf.releasever = self._getReleaseVersion(url)
-
-        base_ksrepo = self.data.RepoData(name=constants.BASE_REPO_NAME,
-                                         baseurl=url, mirrorlist=mirrorlist,
-                                         noverifyssl=not sslverify)
-        self._add_repo(base_ksrepo)
+        if method.method:
+            url, mirrorlist, sslverify = self._setupInstallDevice(self.storage,
+                                                                  checkmount)
+            self._base.conf.releasever = self._getReleaseVersion(url)
+            base_ksrepo = self.data.RepoData(name=constants.BASE_REPO_NAME,
+                                             baseurl=url, mirrorlist=mirrorlist,
+                                             noverifyssl=not sslverify)
+            self._add_repo(base_ksrepo)
 
         for ksrepo in self.data.repo.dataList():
             self._add_repo(ksrepo)
