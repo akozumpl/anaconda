@@ -282,6 +282,7 @@ class DNFPayload(packaging.PackagePayload):
         pass
 
     def reset(self):
+        super(DNFPayload, self).reset()
         self.txID = None
 
     def setup(self, storage):
