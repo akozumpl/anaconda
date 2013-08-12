@@ -96,6 +96,9 @@ class Flags(object):
         if "gpt" in self.cmdline:
             self.gpt = True
 
+        if "dnf" in self.cmdline:
+            self.dnf = True
+
 cmdline_files = ['/proc/cmdline', '/run/install/cmdline',
                  '/run/install/cmdline.d/*.conf', '/etc/cmdline']
 class BootArgs(OrderedDict):
