@@ -195,6 +195,11 @@ class DNFPayload(packaging.PackagePayload):
         return [e.id for e in environments]
 
     @property
+    def groups(self):
+        groups = self._base.comps.groups_iter
+        return [g.id for g in groups]
+
+    @property
     def mirrorEnabled(self):
         return False
 
@@ -202,6 +207,15 @@ class DNFPayload(packaging.PackagePayload):
     def repos(self):
         # known repo ids
         return [r.id for r in self._base.repos.values()]
+
+    def _isGroupVisible(self, grpid):
+        grp = self._base.comps.group_by_pattern(grpid)
+        if grp is None:
+            raise packaging.NoSuchGroup(grpid)
+        return grp.visible
+
+    def _groupHasInstallableMembers(self, grpid):
+        return True
 
     def checkSoftwareSelection(self):
         log.info("checking software selection")
@@ -234,9 +248,27 @@ class DNFPayload(packaging.PackagePayload):
     def environmentDescription(self, environmentid):
         env = self._base.comps.environment_by_pattern(environmentid)
         if env is None:
-            print([e.id for e in self._base.comps.environments])
             raise packaging.NoSuchGroup(environmentid)
         return (env.ui_name, env.ui_description)
+
+    def environmentHasOption(self, environmentid, grpid):
+        env = self._base.comps.environment_by_pattern(environmentid)
+        if env is None:
+            raise packaging.NoSuchGroup(environmentid)
+        return grpid in env.option_ids
+
+    def environmentOptionIsDefault(self, environmentid, grpid):
+        env = self._base.comps.environment_by_pattern(environmentid)
+        if env is None:
+            raise packaging.NoSuchGroup(environmentid)
+        return False
+
+    def groupDescription(self, grpid):
+        """ Return name/description tuple for the group specified by id. """
+        grp = self._base.comps.group_by_pattern(grpid)
+        if grp is None:
+            raise packaging.NoSuchGroup(grpid)
+        return (grp.ui_name, grp.ui_description)
 
     def gatherRepoMetadata(self):
         map(self._sync_metadata, self._base.repos.iter_enabled())
