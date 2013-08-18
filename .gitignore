@@ -92,3 +92,6 @@ widgets/gtk-doc.make
 widgets/src/gettext.h
 anaconda.po
 data/liveinst/gnome/fedora-welcome.po
+.emacs.*
+TAGS
+dnf_img_test/image.img

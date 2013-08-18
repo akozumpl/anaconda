@@ -125,7 +125,7 @@ class AnacondaLog:
         packaging_logger = logging.getLogger("packaging")
         packaging_logger.setLevel(logging.DEBUG)
         self.addFileHandler(PACKAGING_LOG_FILE, packaging_logger,
-                            minLevel=logging.INFO,
+                            minLevel=logging.DEBUG,
                             autoLevel=True)
         self.forwardToSyslog(packaging_logger)
 
