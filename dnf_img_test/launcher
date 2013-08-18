@@ -1,0 +1,5 @@
+#! /usr/bin/python
+
+print('before')
+import pdb; pdb.set_trace()
+print('after')
