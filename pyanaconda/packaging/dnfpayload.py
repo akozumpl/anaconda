@@ -73,8 +73,13 @@ class PayloadRPMDisplay(dnf.output.LoggingTransactionDisplay):
             self._queue.put(('post', None))
 
 def do_transaction(base, queue):
-    display = PayloadRPMDisplay(queue)
-    base.do_transaction(display=display)
+    try:
+        display = PayloadRPMDisplay(queue)
+        base.do_transaction(display=display)
+    except BaseException as e:
+        log.error('The transaction process has ended abruptly')
+        log.info(e)
+        queue.put('quit', str(e))
 
 class DNFPayload(packaging.PackagePayload):
     def __init__(self, data):
@@ -316,11 +321,15 @@ class DNFPayload(packaging.PackagePayload):
         process = multiprocessing.Process(target=do_transaction,
                                           args=(self._base,queue))
         process.start()
+        log.info('waiting on the queue')
         (token, msg) = queue.get()
         while token != 'post':
+            log.info(token)
             if token == 'install':
                 msg = _("Installing %s") % msg
                 progressQ.send_message(msg)
+            elif token == '':
+                pass
             (token, msg) = queue.get()
 
         post_msg = _("Performing post-installation setup tasks")
@@ -348,6 +357,7 @@ class DNFPayload(packaging.PackagePayload):
     def selectEnvironment(self, environmentid):
         env = self._base.comps.environment_by_pattern(environmentid)
         map(self.selectGroup, env.group_ids)
+#        map(self.selectGroup, (id_.name for id_ in env.group_ids))
 
     def setup(self, storage):
         # must end up with the base repo (and its metadata) ready
