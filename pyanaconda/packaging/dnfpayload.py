@@ -91,6 +91,8 @@ class DNFPayload(packaging.PackagePayload):
         self._required_groups = []
         self._required_pkgs = []
         self._configure()
+        import pyanaconda.debug
+        pyanaconda.debug.prlimit_me()
 
     def _add_repo(self, ksrepo):
         repo = self._base.build_repo(ksrepo.name)
@@ -275,6 +277,7 @@ class DNFPayload(packaging.PackagePayload):
         return (env.ui_name, env.ui_description)
 
     def environmentHasOption(self, environmentid, grpid):
+        # return False
         env = self._base.comps.environment_by_pattern(environmentid)
         if env is None:
             raise packaging.NoSuchGroup(environmentid)
