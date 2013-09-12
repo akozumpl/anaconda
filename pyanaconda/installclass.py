@@ -159,7 +159,8 @@ def availableClasses(showHidden=0):
     for d in env_path + ["installclasses",
               "/tmp/updates/pyanaconda/installclasses",
               "/tmp/product/pyanaconda/installclasses",
-              "%s/pyanaconda/installclasses" % get_python_lib(plat_specific=1) ]:
+              "/home/akozumpl/anaconda/pyanaconda/installclasses"]:
+              #"%s/pyanaconda/installclasses" % get_python_lib(plat_specific=1) ]:
         if os.access(d, os.R_OK):
             path.append(d)
 
