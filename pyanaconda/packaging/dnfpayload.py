@@ -306,7 +306,7 @@ class DNFPayload(packaging.PackagePayload):
             types.add('default')
         if optional:
             types.add('optional')
-        self._base.select_group(grp, types)
+        self._base.group_install(grp, types, self.data.packages.excludedList)
 
     def _select_kernel_package(self):
         kernels = self.kernelPackages
